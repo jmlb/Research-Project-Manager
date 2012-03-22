@@ -1,0 +1,27 @@
+ Intro<br>
+Project Manager is a local file browser-based app that enables to keep track of samples. measurements, and tool activities. It can be used as an electronic research lab book and as a complement to the labbook. For example, with the built-in search engine, it makes easier to find information in lab book.
+The Advanced Version of Research Project Manager uses 'modules' and 'classes' for the creation of the samples. By taking an approach similar to Object Oriented enables a more robust code (easier to update and modify) versatile , and ultimately a better experience for the user. The modules are objects that are related to a specific action like spin coating of a wafer, deposition of a thin film. Classes are a family of similar modules, like Deposition, patterning.
+
+<br><br>
+At the moment, there are 3 classes of modules: deposition, nanofab and characterization. The deposition includes the following modules: single layer (SL) and multilayer (ML). Those two modules enable to constructu a variety of films via the combination of those modules. The modules are characterized by their arguments, i.e inputs for reporting on key parameter of an action like for Deposition: the base pressure, the layers thickness for example. Deposition tool, and deposition technique (sputtering tool, ebeam with corresponding arguments (deposition rate, time or rate monitor thickness), can also be specified.<br><br>
+
+The second series of class is nanofabrication. The different modules in that class enable to report on a nanofab recipe for example. The modules include: ion milling, spin coating, stepper, etc...
+<br>
+Another class is the characterization. The modules associated with that class includes AFM, Alpha Step, Transport measurements, magnetometry. More details about the module is available (link here).
+
+The sample fabrication and characterization is based on a sequential approach. Indeed, each sample is determined by their so-called lifeline (samplelifeline). Lifeline includes a set of modules for the film fabrication, a set of modules for the patterning if any, and for the characterization. Each modules on the lifeline follows a chronological order, and are associated wit ha level number increasing by incrementation. Adding modules on the life line provides additional information about the sample. So, if your last 'action' is magnetometry measurements using a VSM, drag and drop the magnetometry module in the empty box at the end of samplelifeline. By clicking on the edit button of the module, the module balloon is displayed. It shows all the arguments of the module, and empty inputs to enter the values specific to the sample. For example, you choose the tool used for the magnetometry measurements: 'vsm'. You can also reports on the data: Ms, Hc, Hsat, 
+What is it?</br>
+Research Project Manager is a browser-based app to keep track of and manage research projects. The user can save all experimental results: including files, images, and details of fabrication process.<br>
+How does it work?<br>
+This web-app is more precisely a browser based app, that does not require live internet connection. It uses html, javascript and sqlite. Sqlite is a database built-in in chrome (ref.). For example, all bookmarks of chrome are saved in a sqlite database.<br>
+Compatibility<br>
+The app was specifically written for google chrome. It has also been tested on android pad like the asus Transformer and Lenovo.<br>
+This tool is a manager web-app. It is local, meaning no connection to any server is required.
+<br><br>
+FREE
+<br>
+Typical Users: this is destined to experimentalists..
+<br>
+Important note: the package includes a backup option. Make sure to backup your database before deleting your web history. indeed, the database created is saved as a sqlite in a user folder like: user_name/local settings/.... by sqlite is saved in a file under: <br><br>
+
+Note that you can use as a complement to your labbook. For instance in the helpme window, you can write down the page in your labbook where you.
