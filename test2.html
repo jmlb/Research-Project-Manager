@@ -1,0 +1,109 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+<script src="jquery-1.7.1.min.js"></script>
+<!-- dateTime Picker -->
+
+
+	<!-- Show single samples list in left menu -->
+<script>
+$(document).ready(function(){
+/////////////////////////////////////////////////////////////////////////////
+////////// LOAD THE DATABASE INFO HERE
+/////////////////////////////////////////////////////////////////////////////
+$("#db_info").load("database/db.html");
+});
+</script>
+
+<script>
+/////////////////////////////////////////////////////////////////////
+//  ENTER THE NAME OF THE DATABASE                           ////////
+/////////////////////////////////////////////////////////////////////
+
+var dbName = "advanced RPM";
+
+/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+
+if (!window.openDatabase) {  
+	alert('Databases are not supported in this browser.');  
+} 
+else{
+	var shortDbName = dbName.replace(/\s/g, "");
+	var version = '1.0';    
+	var maxSize = 20000000; //  bytes  
+	var db = openDatabase(shortDbName, version, dbName, maxSize);
+}
+</script>
+
+</head>
+<title>Research Project Manager</title>
+  <body>
+	<input type="hidden" id="archiveStatus_addSample" value="0"/>
+	<input type="hidden" id="delStatus_addSample" value="0"/>
+	<input type="hidden" id="idSample" value="">
+	Sample Name:<input type="text" id="sampleName_addSample" style="width:100%"/><br>
+	<table width="460px" border="0px"><tr><td width="110px">Level 0:</td><td width="330px"><input type="text" id="level_0" style="width:100%" name="modSL"/></td></tr>
+	<tr><td width="110px">Level 1:</td><td width="330px"><input type="text" id="level_1" style="width:100%" name="modML"/></td></tr>
+		
+		<tr><td width="110px">Level 2:</td><td width="330px"><input type="text" id="level_2" style="width:100%" name="modSpinCoat"/></td></tr>
+		
+		<tr><td width="110px">Level 3:</td><td width="330px"><input type="text" id="level_3" style="width:100%" name="modSpinCoat"/></td></tr>
+		</table>
+		<div id="iteration" name="0"></div>
+		<br>
+	 </body>
+	 </html>
+	 <script>
+
+//This function retrieves the list of modules used in ascendant level order.	 
+function arrSampleLifeLine(){
+	var j = 0;
+	var countSteps = 0;
+	var arrSampleLifeLine = new Array();
+	while(j == 0){
+		idInputLevels = "level_"+countSteps;
+		var thisStep = document.getElementById(idInputLevels);
+		if(thisStep == null){j = 1;}
+		else{
+			var modName = document.getElementById(idInputLevels).name;
+			arrSampleLifeLine.push(modName); //singleStep(level#,ModName)
+			countSteps = countSteps + 1;
+		}
+	}
+	return arrSampleLifeLine;
+}
+
+
+function newSample(){
+	var sampleName_addSample = document.getElementById('sampleName_addSample');
+	var archiveStatus_addSample = document.getElementById('archiveStatus_addSample');
+	var delStatus_addSample = document.getElementById('delStatus_addSample');
+	var insertSampleList = "INSERT INTO SampleList (sampleName, archiveStatus, delStatus) VALUES (?, ?, ?)";
+	//Select the id of the sample just added to sampleList
+	var selectIdSample = "SELECT id from SampleList order by id DESC limit 1";
+	db.transaction(function(tx) {
+		//INSERT INTO name_of_table (name_of_column1, name_of_column2) VALUES (value of parameter1, value_of_parameter2)
+
+		tx.executeSql(insertSampleList, [sampleName_addSample.value, archiveStatus_addSample.value, delStatus_addSample.value], function(tx,res){	
+			//Get the id of the inserted sample
+			tx.executeSql(selectIdSample, [], function(tx,resIdSample){
+			var datasetIdSample = resIdSample.rows;
+			var itemIdSample = datasetIdSample.item(0);
+			var idSample = itemIdSample['id'];
+			var inputIdSample = document.getElementById("idSample").value;
+			inputIdSample = idSample;
+			alert("tbleName = "+tbleName+" and idNewMod = "+idNewMod+" i="+value);
+		}, onError);
+	}, onError);
+});
+}
+
+newSample();
+
+function onError(tx, error) {
+    alert(error.message);
+}
+	 </script>

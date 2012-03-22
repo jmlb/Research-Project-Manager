@@ -1,0 +1,34 @@
+ 5400
++2100
++1800
+-----------------
+ 9300
+-2300  Rent
+-------
+ 7000
+- 200  National Grid
+-------
+ 6800
+- 150  Coned
+-------
+ 6650
+-  10   Netflix
+-------
+ 6640
+- 150   QTime Warner
+--------
+ 6490
+- 850   DayCare
+--------
+ 5640
+- 800   Shopping
+--------
+ 4840
+- 260  After school
+-120   T-Mobile
+-60     Louna Dessin
+-75    Louna Super kickers   
+-250   music Louna
+-120   Gymboree
+-------
+3950
