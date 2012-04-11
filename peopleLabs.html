@@ -4,96 +4,6 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <link rel="stylesheet" type="text/css" href="style.css">
 <script src="jquery-1.7.1.min.js"></script>
-
-<style type="text/css">
-<!--
-
-
-.tableheader {
-	background-color: #FFFFFF;
-	background-image: url(http://www.ibm.com/i/v16/t/sprites-t1.gif);
-	background-repeat: repeat-x;
-	background-position: 0px -545px;
-	padding-left: 10px;
-	font-weight: bold;
-	border-top-width: 0px;
-	border-right-width: 0px;
-	border-bottom-width: 1px;
-	border-left-width: 0px;
-	border-top-style: none;
-	border-right-style: none;
-	border-bottom-style: solid;
-	border-left-style: none;
-	border-top-color: #FFFFFF;
-	border-bottom-color: #cccccc;
-	font-size: 12px;
-}
-.tablepadding {
-	margin: 0px;
-	padding-top: 0px;
-	padding-right: 10px;
-	padding-bottom: 0px;
-	padding-left: 10px;
-	border-top-width: 0px;
-	border-right-width: 0px;
-	border-bottom-width: 0px;
-	border-left-width: 0px;
-	border-top-style: none;
-	border-right-style: none;
-	border-bottom-style: none;
-	border-left-style: none;
-	font-family: Arial, Helvetica, sans-serif;
-	font-size: 12px;
-}
-
-.tableborder {
-	border: 1px solid #cccccc;
-}
-
-
-.images { 
-        height:75px;
-        width:75px; 
-        border:0px; 
-        margin:15px 15px 0 0; 
-}
--->
-</style>
-
-<style type="text/css">
-
-table, td
-{
-    border-color: #e6e6e6;
-    border-style: solid;
-}
-</style>
-  
-<script>
-function imagesSelected(myFiles) {
-  for (var i = 0, f; f = myFiles[i]; i++) {
-    var imageReader = new FileReader();
-    imageReader.onload = (function(aFile) {
-      return function(e) {
-        var span = document.createElement('span');
-        span.innerHTML = ['<img class="images" src="', e.target.result,'" title="', aFile.name, '"/>'].join('');
-        document.getElementById('thumbs').insertBefore(span, null);
-      };
-    })(f);
-    imageReader.readAsDataURL(f);
-  }
-}
-
-function dropIt(e) {  
-   imagesSelected(e.dataTransfer.files); 
-   e.stopPropagation();  
-   e.preventDefault();   
-}  
-</script>
-
-
-
-	<!-- Show single tool list in left menu -->
 	<script>
 /////////////////////////////////////////////////////////////////////
 //  ENTER THE NAME OF THE DATABASE                           ////////
@@ -108,7 +18,7 @@ if (!window.openDatabase) {
 else{
 	var shortDbName = dbName.replace(/\s/g, "");
 	var version = '1.0';    
-	var maxSize = 20000000; //  bytes  
+	var maxSize = 50000000; //  bytes  
 	var db = openDatabase(shortDbName, version, dbName, maxSize);
 }
 
@@ -116,384 +26,454 @@ else{
 
 <script>
 $(document).ready(function(){
-/////////////////////////////////////////////////////////////////////////////
-/////  SELECT TYPE OF toolS TO DISPLAY IN THE List menuLeft  /////////////
-/////////////////////////////////////////////////////////////////////////////
-	$("#btn_showToolsByStatus").change(function(event0){
-		event0.preventDefault();
-		var toolList_displayValue = $(this).val();
-		showListTools(toolList_displayValue);
-		//Backup the selected option value in <input name="displayOption" value="" id="displayOption">
-		$("#displayOption").val(toolList_displayValue);
-		formTool();
-		check_ToolName();
-	});
-	//Choose color-code for the tool
-	$("#container").delegate(".singleColor", "click", function(event0){
-		event0.preventDefault();
-		for(var j = 0; j < toolColorCodeArr.length; j++){
-			var resetColorCodeBox = "cc-"+toolColorCodeArr[j];
-			resetColorCodeBox = resetColorCodeBox.replace("#","");
-			$("#"+resetColorCodeBox).css("width","15px");
-			$("#"+resetColorCodeBox).css("height","15px");
-			$("#"+resetColorCodeBox).css("border","1px solid #000000");
-		};
-		$(this).css("width","20px");
-		$(this).css("height","20px");
-		$(this).css("border","2px solid #000000");
-		var selectedColorCodeBox = $(this).attr("id");
-		selectedColorCodeBox = selectedColorCodeBox.replace("cc-","#");
-		$("#colorCode_Tool").val(selectedColorCodeBox);
-	});	
-
+///////////////////////////////////////////////
+//Close the window BackUpDB   /////////////////
+///////////////////////////////////////////////	
+$("#backupDBForm").delegate("#btn_closeBackUpDiv", "click", function(){
+		$("#fade").remove();
+		$("#backupDBForm").remove();
+});
 });
 /////////////////////////////////////////////////////////////////////////////
 /////  Functions JAVASCRIPT                                     /////////////
 /////////////////////////////////////////////////////////////////////////////
-function formTool(){
-	var formToolText = '<div id="submitInsertButton" style="width:100px; display:block; margin-bottom:40px; margin-top:5px; float:left; margin-left:10px;"><button onClick="insertNewTool(); showSubmitButton()" id="insert_newTool" class="insert_new" style="width:100px"><img src="images/save_logo.png" width="15px" height="15px" align="baseline">&nbsp;<b>save</b></button></div><div id="submitUpdateButton" style="width:100px; display:none;margin-bottom:40px; margin-top:5px; float:left; margin-left:10px;"><button onClick="updateTool();" id="update_newTool" class="update_new" style="width:100px"><img src="images/update_logo.png" width="15px" align="baseline">&nbsp;<b>update</b></button></div>'; //submitButton
-	formToolText += '<div id="argTool" style="margin-bottom:10px"><input type="hidden" id="archiveStatus_Tool" value="0"/><input type="hidden" id="delStatus_Tool" value="0"/><input type="hidden" id="idTool" value=""/>'; //Hidden inputs
-		formToolText += '<fieldset style="height:100%; width:340px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">Name of Tool</legend><table width="330px" border="0px" style="margin-left:10px;"><tr><td width="330px" valign="top"><input type="text" id="toolName_Tool" onkeyup="check_ToolName();" style="width:320px" /></td></tr></table><div id="err_toolName" class="err_toolName" style="display: block; position:absolute; top: 270px; right:200px; background-color:#FFF8AD; border: 0px solid #FFF15B; height: 20px; padding-top:8px; padding-bottom:1px; width:200px; text-align:center;"><div style="font-size: 0px; line-height: 0%; width: 0px; border-bottom: 20px solid #FFF8AD; border-left: 10px solid transparent; border-right: 10px solid transparent; position: absolute; top: -10px; left:100px;"></div><div>this tool name is already in use</div></div></fieldset>';
-		formToolText += '<fieldset style="height:100%; width:340px; margin-top:20px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4""><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">Tool Color Identifier </legend><table width="330px" border="0x" style="margin-left:20px; align:left; margin-top:0px; border-top: 0px solid #000000; border-left: 0px solid #000000; border-right: 0px solid #00000; border-bottom: 0px solid #00000; padding-top:5px; " cellpadding="0px" cellspacing="0px"><td width="330px" valign="top"><input type="hidden" name="colorCode_Tool" id="colorCode_Tool" value=""><div id="colorCodes" style="overflow:hidden;height:100px; margin-top:5px; margin-left:50px;"></div></td></tr></table></fieldset><fieldset style="height:100%; width:340px; margin-top:20px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">Tool Description</legend><table width="330px" border="0px" cellspacing="0px" cellpadding="0px" style="margin-top:0px; margin-left:10px; align:left;  border: 0px solid #000000; padding-top:0px;"><tr><td valign="top"><textarea id="info_Tool" style="width:310px; height:110px; margin-left:5px; margin-right:5px; margin-top:5px;"></textarea></td></tr></table></fieldset>';
-		formToolText += '<table width="450px" border="1px"><tr><td width="450px" valign="top">Include files</td></tr><tr><td><table width="450" border="1" cellspacing=0 cellpadding=5><tr bgcolor="#F2F2F2"><td class="tableheader" align="left"><p>Thumbnail palette</p></td></tr><tr><td align="left" height="105" ondragenter="return false" ondragover="return false" ondrop="dropIt(event)"><output id="thumbs"></output></td></tr><tr><td align="center"><p>Drag & drop or choose images from your local file system: <input type="file" id="input" size="10" multiple="true" onchange="imagesSelected(this.files)" /></p></td></tr></table></td></tr></table><br>';
+function showFormLabs(){
+	var formLabText = '<div id="submitInsertButton" style="width:100px; display:block; margin-bottom:40px; margin-top:5px; float:left; margin-left:10px;"><button onClick="insertNewLab(); showSubmitButton()" id="insert_newLab" class="insert_new" style="width:100px"><img src="images/save_logo.png" width="15px" height="15px" align="baseline">&nbsp;<b>save</b></button></div><div id="submitUpdateButton" style="width:100px; display:none;margin-bottom:40px; margin-top:5px; float:left; margin-left:10px;"><button onClick="updateLab();" id="update_newLab" class="update_new" style="width:100px"><img src="images/update_logo.png" width="15px" align="baseline">&nbsp;<b>update</b></button></div>'; //submitButton
+		formLabText += '<div id="argLab" style="margin-bottom:0px"><input type="hidden" id="archiveStatus_Lab" value="0"/><input type="hidden" id="delStatus_Lab" value="0"/><input type="hidden" id="idLab" value=""/>'; //Hidden inputs
+		formLabText += '<fieldset style="height:100%; width:400px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">Name of Lab</legend><input type="text" id="name_Lab" onkeyup="check_LabName();" style="width:380px"/><div id="err_LabName" class="err_LabName" style="display: none; position:absolute; top: 270px; right:200px; background-color:#FFF8AD; border: 0px solid #FFF15B; height: 20px; padding-top:8px; padding-bottom:1px; width:200px; text-align:center;"><div style="font-size: 0px; line-height: 0%; width: 0px; border-bottom: 20px solid #FFF8AD; border-left: 10px solid transparent; border-right: 10px solid transparent; position: absolute; top: -10px; left:100px;"></div><div>this Lab name is already in use</div></div></fieldset>';
+		formLabText += '<fieldset style="height:100%; width:400px; margin-top:20px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">Institution</legend><input id="institution_Lab" style="width:380px; margin-left:5px; margin-right:5px; margin-top:5px;"></fieldset>';
+		formLabText += '<fieldset style="height:100%; width:400px; margin-top:20px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">Adress</legend><input id="adress_Lab" style="width:380px; margin-left:5px; margin-right:5px; margin-top:5px;"></fieldset>';
+		formLabText += '<table cellspacing="0px" cellpadding="0px" width="400px" border="0px"><tr><td width="240px" align="left"><fieldset style="height:100%; width:220px; margin-top:20px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">City</legend><input id="city_Lab" style="width:200px; margin-left:0px; margin-right:5px; margin-top:5px;"></fieldset></td><td width="100px"><fieldset style="height:100%; width:90px; margin-top:20px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">ZipCode</legend><input id="zipcode_Lab" style="width:80px; margin-left:5px; margin-right:5px; margin-top:5px;"></fieldset></td><td width="50px"><fieldset style="height:100%; width:40px; margin-top:20px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">State</legend><input id="state_Lab" style="width:30px; margin-left:5px; margin-right:5px; margin-top:5px;"></fieldset></td></tr></table>';
+		formLabText += '<fieldset style="height:100%; width:400px; margin-top:20px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">Country</legend><input id="country_Lab" style="width:380px; margin-left:5px; margin-right:5px; margin-top:5px;"></fieldset>';
 		var centerRail = document.getElementById("centerRail");
-		centerRail.innerHTML = formToolText;
-		createcolorCodeTable(0); // Create the table of colorCode
-}
-/////  Add a new tool                            /////////////////////////
-function insertNewTool(){
-	//Get the values of the inputs
-	var archiveStatus_Tool = document.getElementById("archiveStatus_Tool").value;
-	var delStatus_Tool = document.getElementById("delStatus_Tool").value;
-	var toolName_Tool = document.getElementById("toolName_Tool").value;
-	var info_Tool = document.getElementById("info_Tool").value;
-	var colorCode_Tool = document.getElementById("colorCode_Tool").value;
-	var insertToolList = "INSERT INTO ToolList (toolName, info, colorCode, archiveStatus, delStatus) VALUES (?, ?, ?, ?, ?)";
-	//Select the id of the sample just added to sampleList
-	db.transaction(function(tx) {
-	//INSERT INTO name_of_table (name_of_column1, name_of_column2) VALUES (value of parameter1, value_of_parameter2) 
-		tx.executeSql(insertToolList, [toolName_Tool, info_Tool, colorCode_Tool, archiveStatus_Tool, delStatus_Tool], function(tx){
-			var backupDisplayOption = document.getElementById("displayOption").value;
-			showListTools(backupDisplayOption);
-		}, onError);
-	});
-}
-//Archive tool
-function archiveTool(idTool){
-	db.transaction(function(tx) {
-		var archiveStatus = 1; //Archive the tool
-		var colorCode = 0;
-		var updateToolSQL = "UPDATE toolList SET colorCode = ?, archiveStatus = ? WHERE id = ?";
-		tx.executeSql(updateToolSQL, [colorCode, archiveStatus, idTool], function(tx,result){
-			var backupDisplayOption = document.getElementById("displayOption").value;
-			showListTools(backupDisplayOption);
-		}, onError);
-		}); 
-}
-//Activate tool
-function activeTool(idTool){
-	db.transaction(function(tx) {
-		var archiveStatus = 0; //Archive the tool
-		var updatetoolSQL = "UPDATE toolList SET archiveStatus = ? WHERE id = ?";
-		tx.executeSql(updatetoolSQL, [archiveStatus, idTool], function(tx,result){
-			var backupDisplayOption = document.getElementById("displayOption").value;
-			showListTools(backupDisplayOption);
-		}, onError);
-		});
-}
-//Delete tool
-function deleteTool(idTool){
-	db.transaction(function(tx) {
-		var deleteStatus = 1; //Archive the tool
-		var colorCode = 0;
-		var updateToolSQL = "UPDATE toolList SET colorCode = ?, delStatus = ? WHERE id = ?";
-		tx.executeSql(updateToolSQL, [colorCode, deleteStatus, idTool], function(tx,result){
-			var backupDisplayOption = document.getElementById("displayOption").value;
-			showListTools(backupDisplayOption);
-		}, onError);
-		});
+		centerRail.innerHTML = formLabText;
+		document.getElementById("insert_newLab").setAttribute("class","insert_newOff");
 }
 
-//Edit tool
-function editTool(idTool){
+function showFormPeople(){
+	var formPeopleText = '<div id="submitInsertButton" style="width:100px; display:block; margin-bottom:40px; margin-top:5px; float:left; margin-left:10px;"><button onClick="insertNewPerson(); showSubmitButton()" id="insert_newPerson" class="insert_new" style="width:100px"><img src="images/save_logo.png" width="15px" height="15px" align="baseline">&nbsp;<b>save</b></button></div><div id="submitUpdateButton" style="width:100px; display:none;margin-bottom:40px; margin-top:5px; float:left; margin-left:10px;"><button onClick="updatePerson();" id="update_newPerson" class="update_new" style="width:100px"><img src="images/update_logo.png" width="15px" align="baseline">&nbsp;<b>update</b></button></div>'; //submitButton
+		formPeopleText += '<div id="argPerson" style="margin-bottom:0px"><input type="hidden" id="archiveStatus" value="0"/><input type="hidden" id="delStatus" value="0"/><input type="hidden" id="idPerson" value=""/>'; //Hidden inputs
+		formPeopleText += '<fieldset style="height:100%; width:400px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">Family Name</legend><input type="text" id="personFamilyName" onkeyup="" style="width:380px"/></div></fieldset>';
+		formPeopleText += '<fieldset style="width:400px; margin-top:20px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">First Name</legend><input id="personFirstName" style="width:380px; margin-left:5px; margin-right:5px; margin-top:5px;"></fieldset>';
+		formPeopleText += '<fieldset style="width:400px; margin-top:20px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">email (s)</legend><input id="email1" style="width:380px; margin-left:5px; margin-right:5px; margin-top:5px;"><br><input id="email2" style="width:380px; margin-left:5px; margin-right:5px; margin-top:5px;"></fieldset>';
+		formPeopleText += '<fieldset style="width:400px; margin-top:20px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">telephone (s)</legend><input id="telephone1" style="width:380px; margin-left:5px; margin-right:5px; margin-top:5px;"><br><input id="telephone2" style="width:380px; margin-left:5px; margin-right:5px; margin-top:5px;"></fieldset>';
+		formPeopleText += '<fieldset style="width:400px; margin-top:20px; background: #e7e8e8; background: -webkit-gradient(linear, left top, left bottom, from(#e7e8e8), to(#F6F6F6)); background: -moz-linear-gradient(top,  #e7e8e8,  #F6F6F6); filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#e7e8e8\', endColorstr=\'#F6F6F6\'); border:1px solid #D4D4D4"><legend style="border: solid 1px #D4D4D4; background:#e7e8e8; padding:5px;">Affiliation</legend><div id="listLab_selectForm" style="width:380px"></div></fieldset>';
+		var centerRail = document.getElementById("centerRail");
+		centerRail.innerHTML = formPeopleText;
+		listLab_selectform();
+}
+/////////////////////////////////////////////////////////////////
+//  List of Labs for the drop/down menu in Person Arg box  //
+/////////////////////////////////////////////////////////////////
+function listLab_selectform(){
 	db.transaction(function(tx) {
-		var selectTool = "SELECT * FROM ToolList WHERE id = ?";
-		tx.executeSql(selectTool, [idTool], function(tx,result){
-			showSubmitButton();
+		var selectAllLabs = "SELECT * FROM Lab WHERE delStatus = ? AND archiveStatus = ?";
+		tx.executeSql(selectAllLabs, [0, 0], function(tx, result) {
 			var dataset = result.rows;
-			var item = dataset.item(0);
-			var toolName = item['toolName'];
-			var info = item['info'];
-			var colorCode = item['colorCode'];
-			var archiveStatus = item['archiveStatus'];
-			var delStatus = item['delStatus'];
-			document.getElementById("idTool").value = idTool;
-			document.getElementById("delStatus_Tool").value =  delStatus;
-			document.getElementById("archiveStatus_Tool").value =  archiveStatus;
-			document.getElementById("toolName_Tool").value = toolName;
-			document.getElementById("info_Tool").value =  info;
-			document.getElementById("colorCode_Tool").value =  colorCode;
-			createcolorCodeTable(colorCode);
-			check_ToolName();
-		}, onError);
-	});
-}
-
-//update tool
-function updateTool(){
-	db.transaction(function(tx){
-		var idTool = document.getElementById("idTool").value;
-		var toolName_Tool = document.getElementById("toolName_Tool").value;
-		var info_Tool = document.getElementById("info_Tool").value;
-		var colorCode_Tool = document.getElementById("colorCode_Tool").value;
-		var updateToolSQL = "UPDATE toolList SET toolName = ?, info = ?, colorCode = ? WHERE id = ?";
-		tx.executeSql(updateToolSQL, [toolName_Tool, info_Tool, colorCode_Tool, idTool], function(tx,result){
-			showListTools();
-		}, onError);
-	});
-}
-
-//////////////////////////////////////////////////////
-///                     Color Code                ////
-//////////////////////////////////////////////////////
-var toolColorCodeArr = new Array("#000000","#808080","#FFFFFF","#800000","#808000","#008000","#008080","#000080","#800080","#808040","#004040","#0080FF","#004080","#8000FF","#804000","#FF0000","#FFFF00","#00FF00","#00FFFF","#0000FF","#FF00FF","#FFFF80","#00FF80","#80FFFF","#8080FF","#FF0080","#FF8000","#E25457","#BAA87C","#70B63D","#AAAAAA","#99D1CA","#9B99D1","#DDDDDD","#CE99D1","#D199AC");
-
-function createcolorCodeTable(selectedColor){
-	 db.transaction(function(tx) {
-		var selectAllProjects = "SELECT colorCode FROM ProjectList";
-		tx.executeSql(selectAllProjects, [], function(tx, result) {
-			var item;
-			var dataset = result.rows; ;
-			var usedColorCodeArr = new Array();
-			for (var i = 0, item = null; i < dataset.length; i++) {
-				item = dataset.item(i);
-				var colorCode = item['colorCode']
-				usedColorCodeArr.push(colorCode);
-			}
-			var text = '<table><tr>';
-			var thisColor = document.getElementById("colorCode_Tool").value;
-			for(var j = 0 ; j < toolColorCodeArr.length ; j++){
-				var ccArrayElement = toolColorCodeArr[j];
-				var ccItem = 'cc-'+ccArrayElement;
-				ccItem = ccItem.replace("#","");
-				//if the colorCode is used (i.e in usedColorCodeArr)
-				var index = usedColorCodeArr.indexOf(ccArrayElement);	
-			if(ccArrayElement != selectedColor){
-				if(index != -1){var visibility = "visibility: hidden";}
-				else{var visibility = "visibility: visible";}
-				text += '<td align="center"><div style="width:15px; height:15px; background:'+ccArrayElement+'; border:1px solid #000000;'+visibility+'" id="'+ccItem+'" class="singleColor"></div></td>';
-			} else{
-				text += '<td align="center"><div style="width:20px; height:20px; background:'+ccArrayElement+'; border:2px solid #000000;" id="'+ccItem+'" class="singleColor"></div></td>';
-			}
-				if(j == 9 || j == 19 || j == 29){text += '</tr><tr>';}
-				if(j == 35){text += '</tr>';}
-			}
-			text += '</table>';
-			var containerColorCodeTble = document.getElementById("colorCodes");
-			containerColorCodeTble.innerHTML = text;
-			}, onError);
-	});
-}
-
- ////////////////////////////////////////////////////////
- //  check that the project name does not already exist //
- ////////////////////////////////////////////////////////
-function check_ToolName(){
-	var toolNameValue = toolName_Tool.value;
-	var idThisTool = document.getElementById("idTool").value;
-	var set;
-	var datasetLength;
-	db.transaction(function(tx) {
-		var selectAllToolsName = "SELECT id, toolName FROM ToolList WHERE toolName = ? AND id != ?";
-		tx.executeSql(selectAllToolsName, [toolNameValue, idThisTool], function(tx, result){
-			set = result.rows;
-			datasetLength = set.length;
-			if(toolNameValue.length > 0 && datasetLength == 0){ //the name enter by user is not of 0 length and , does not exist in the database
-				document.getElementById("err_toolName").style.display = "none";
-				document.getElementById("insert_newTool").disabled = false;
-				document.getElementById("insert_newTool").setAttribute("class", "insert_new");
-				document.getElementById("update_newTool").disabled = false;
-				document.getElementById("update_newTool").setAttribute("class", "insert_new");
-			}
-			else{ // the name exists
-				if(datasetLength != 0){ // and the length is not zero
-					var toolNameLength = document.getElementById("toolName_Tool").value.length;
-					if(toolNameLength == 0){
-						document.getElementById("err_toolName").style.display = "none";
-					}
-					else{
-					document.getElementById("err_toolName").style.display = "block";
-					}
-					document.getElementById("insert_newTool").setAttribute("class", "insert_newOff");
-					document.getElementById("insert_newTool").disabled = true;
-					document.getElementById("update_newTool").setAttribute("class", "update_newOff");
-					document.getElementById("update_newTool").disabled = true;
-					}
+			var lab;
+			var listLab_selectForm = document.getElementById("listLab_selectForm");
+			listLab_selectForm.innerHTML = ''; 
+			if(dataset.length > 0){
+				listLab_selectForm.innerHTML = '<form name="listLab_form" id="listLab_form"><select name="listLab_select" id="listLab_select" onChange="idLabSelectValue(this.selectedIndex);" style="width:200px;"><option value="0">---</option></select></form>';
+				var objSelect=document.forms["listLab_form"].elements["listLab_select"];
+				for (var i = 0, lab = null; i < dataset.length; i++) {
+					lab = dataset.item(i);
+					var objOption = document.createElement("option");
+					document.listLab_form.listLab_select.options.add(objOption);
+					objOption.text = lab['name'];
+					objOption.value = lab['id'];
 				}
-			}, onError);
-	});	
+			listLab_selectForm.innerHTML += '<input type="hidden" id="LabAffId_input" value=""/>';		
+			}
+			else{
+				listLab_selectForm.innerHTML = ' No Lab available. Go <a href="" onClick="showForm(1)">here</a> to add a Lab.';
+				
+			}
+		});
+	});
 }
+//Write value of selected idProject in input field
+function idLabSelectValue(x){
+	var select = document.getElementById("listLab_select");
+	var items = select.getElementsByTagName("option");
+		for (var index = 0; index < items.length; index++) { 
+			if (index == x) {
+				document.getElementById("LabAffId_input").value = select.options[index].value;
+			} 
+		}
+}
+///////////////////////////////////////////
+// Change button from save to update //////
 ///////////////////////////////////////////
 function showSubmitButton(){
 	document.getElementById("submitInsertButton").style.display = "none";
 	document.getElementById("submitUpdateButton").style.display = "block";
 }
 
-function gotoWeb(){
-	var answer = confirm("You are going to go online to the official webpage of Research Project Manager");
-	if (answer){
-		window.location = "http://www.jmbeaujour.com/rpmAdv";
+ ////////////////////////////////////////////////////////
+ //  check that the project name does not already exist //
+ ////////////////////////////////////////////////////////
+function check_LabName(){
+	var LabNameValue = document.getElementById("name_Lab").value;
+	if(LabNameValue.length == 0){
+		document.getElementById("insert_newLab").setAttribute("class", "insert_newOff");
+		document.getElementById("insert_newLab").disabled = true;
+		document.getElementById("err_LabName").style.display = "none";
 	}
+	else{
+	var idThisLab = document.getElementById("idLab").value;
+	var set;
+	var datasetLength;
+	db.transaction(function(tx) {
+		var selectAllLabsName = "SELECT id, name FROM Lab WHERE name = ? AND id != ?";
+		tx.executeSql(selectAllLabsName, [LabNameValue, idThisLab], function(tx, result){
+			set = result.rows;
+			datasetLength = set.length;
+			if(LabNameValue.length > 0 && datasetLength == 0){ //the name does not exist in the database
+				document.getElementById("err_LabName").style.display = "none";
+				document.getElementById("insert_newLab").disabled = false;
+				document.getElementById("insert_newLab").setAttribute("class", "insert_new");
+				document.getElementById("update_newLab").disabled = false;
+				document.getElementById("update_newLab").setAttribute("class", "insert_new");
+			}
+			else{ // the name exists
+				if(datasetLength != 0){ // and the length is not zero
+					var LabNameLength = document.getElementById("LabName_Lab").value.length;
+					if(LabNameLength == 0){
+						document.getElementById("err_LabName").style.display = "none";
+					}
+					else{
+					document.getElementById("err_LabName").style.display = "block";
+					}
+					document.getElementById("insert_newLab").setAttribute("class", "insert_newOff");
+					document.getElementById("insert_newLab").disabled = true;
+					document.getElementById("update_newLab").setAttribute("class", "update_newOff");
+					document.getElementById("update_newLab").disabled = true;
+					}
+				}
+			}, onError);
+	});	
+}
 }
 
-function gotoHelp(){
-	var answer = confirm("You are going to go online to the official webpage of Research Project Manager");
-	if (answer){
-		window.location = "http://www.jmbeaujour.com/rpmAdv/help.php";
-	}
+/////  Add a new Lab                            /////////////////////////
+function insertNewLab(){
+	//Get the values of the inputs
+	var archiveStatus_Lab = document.getElementById("archiveStatus_Lab").value;
+	var delStatus_Lab = document.getElementById("delStatus_Lab").value;
+	var name_Lab = document.getElementById("name_Lab").value;
+	var institution_Lab = document.getElementById("institution_Lab").value;
+	var adress_Lab = document.getElementById("adress_Lab").value;
+	var city_Lab = document.getElementById("city_Lab").value;
+	var zipcode_Lab = document.getElementById("zipcode_Lab").value;
+	var state_Lab = document.getElementById("state_Lab").value;
+	var country_Lab = document.getElementById("country_Lab").value;
+	var insertLab = "INSERT INTO Lab (name, institution, adress, city, zipCode, state, country, archiveStatus, delStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	//Select the id of the sample just added to sampleList
+	db.transaction(function(tx) {
+		tx.executeSql(insertLab, [name_Lab, institution_Lab, adress_Lab, city_Lab, zipcode_Lab, state_Lab, country_Lab, archiveStatus_Lab, delStatus_Lab], function(tx){
+			var backupDisplayOption = document.getElementById("displayOption").value;
+			showListLabs();
+			var selectIdLab = "SELECT id from Lab order by id DESC limit 1";
+			tx.executeSql(selectIdLab, [], function(tx,resIdLab){
+				var datasetIdLab = resIdLab.rows;
+				var itemIdLab = datasetIdLab.item(0);
+				var idLab = itemIdLab['id'];
+				document.getElementById("idLab").value = idLab;
+			}, onError);
+		}, onError);
+	});
 }
+//update LAB
+function updateLab(){
+	db.transaction(function(tx){
+	//Get the values of the inputs
+	var idLab = document.getElementById("idLab").value;
+	var archiveStatus_Lab = document.getElementById("archiveStatus_Lab").value;
+	var delStatus_Lab = document.getElementById("delStatus_Lab").value;
+	var name_Lab = document.getElementById("name_Lab").value;
+	var institution_Lab = document.getElementById("institution_Lab").value;
+	var adress_Lab = document.getElementById("adress_Lab").value;
+	var city_Lab = document.getElementById("city_Lab").value;
+	var zipcode_Lab = document.getElementById("zipcode_Lab").value;
+	var state_Lab = document.getElementById("state_Lab").value;
+	var country_Lab = document.getElementById("country_Lab").value;
+		var updateLabSQL = "UPDATE Lab SET name = ?, institution = ?, adress = ?, city = ?, zipCode = ?, state = ?, country = ?, delStatus = ?, archiveStatus = ? WHERE id = ?";
+		tx.executeSql(updateLabSQL, [name_Lab, institution_Lab, adress_Lab, city_Lab, zipcode_Lab, state_Lab, country_Lab, delStatus_Lab, archiveStatus_Lab, idLab], function(tx,result){
+			showListLabs();
+		}, onError);
+	});
+}
+
+
+/////  Add a new People                            /////////////////////////
+function insertNewPerson(){
+	//Get the values of the inputs
+	var archiveStatus = document.getElementById("archiveStatus").value;
+	var delStatus = document.getElementById("delStatus").value;
+	var personFirstName = document.getElementById("personFirstName").value;
+	var personFamilyName = document.getElementById("personFamilyName").value;
+	var email1 = document.getElementById("email1").value;
+	var email2 = document.getElementById("email2").value;
+	var telephone1 = document.getElementById("telephone1").value;
+	var telephone2 = document.getElementById("telephone2").value;
+	var LabAffId = document.getElementById("LabAffId_input").value;
+	var insertPerson = "INSERT INTO Person (personFirstName, personFamilyName, email1, email2, telephone1, telephone2, LabAffId, archiveStatus, delStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	//Select the id of the sample just added to sampleList
+	db.transaction(function(tx) {
+		tx.executeSql(insertPerson, [personFirstName, personFamilyName, email1, email2, telephone1, telephone2, LabAffId, archiveStatus, delStatus], function(tx){
+			var backupDisplayOption = document.getElementById("displayOption").value;
+			showListPeople();
+			var selectIdPerson = "SELECT id from Person order by id DESC limit 1";
+			tx.executeSql(selectIdPerson, [], function(tx,resIdPerson){
+				var datasetIdPerson = resIdPerson.rows;
+				var itemIdPerson = datasetIdPerson.item(0);
+				var idPerson = itemIdPerson['id'];
+				document.getElementById("idPerson").value = idPerson;
+			}, onError);
+		}, onError);
+	});
+}
+//update Person
+function updatePerson(){
+	db.transaction(function(tx){
+	//Get the values of the inputs
+	var idPerson = document.getElementById("idPerson").value;
+	var archiveStatus = document.getElementById("archiveStatus").value;
+	var delStatus = document.getElementById("delStatus").value;
+	var personFamilyName = document.getElementById("personFamilyName").value;
+	var personFirstName = document.getElementById("personFirstName").value;
+	var email1 = document.getElementById("email1").value;
+	var email2 = document.getElementById("email2").value;
+	var telephone1 = document.getElementById("telephone1").value;
+	var telephone2 = document.getElementById("telephone2").value;
+	var LabAffId = document.getElementById("LabAffId_input").value;
+		var updateLabSQL = "UPDATE Person SET personFamilyName = ?, personFirstName = ?, email1 = ?, email2 = ?, telephone1 = ?, telephone2 = ?, LabAffId = ?, delStatus = ?, archiveStatus = ? WHERE id = ?";
+		tx.executeSql(updateLabSQL, [personFamilyName, personFirstName, email1, email2, telephone1, telephone2, LabAffId, delStatus , archiveStatus, idPerson], function(tx,result){
+			showListPeople();
+		}, onError);
+	});
+}
+
+
 </script>
 </head>
 <title>Research Project Manager</title>
-  <body onload="formTool(); check_ToolName();"  bgcolor="#8BA3b7">
+  <body bgcolor="#8BA3b7">
 <div style="position:absolute; top: 5px; left:20px; z-index:400"><img src="images/test1.png" width="100px" height="79px"></div><div style="position:relative; padding-top:20px; padding-left: 30px; font-family: Tahoma,Verdana,Arial; color : #000000;
-font-size: 12px; color: #000000; text-decoration: none; margin-bottom: 3px;"><table width="890px" border="0px" cellspacing="0px" cellpadding="0px"><tr height="40px" valign="middle" align="left"><td style="padding-left:80px; width:50%"><font color="white" size="5px" style="font-family:Arial"><b>Research Project Manager</b></font><br><font color="black" size="2px" style="font-family:Arial;"><i>organize and keep track of your research data!</i></font></td><td valign="bottom" width="50%" align="right"><a href="intro.html" style="text-decoration: none; color:#000000;" onMouseOver="this.style.color='#D6D6D6'" onMouseOut="this.style.color='#000000'">intro</a> | <a href="db_setup.html" style="text-decoration: none; color:#000000;" onMouseOver="this.style.color='#D6D6D6'" onMouseOut="this.style.color='#000000'">settings</a> | <a href="#" onClick="gotoHelp();" style="text-decoration: none; color:#000000;"  onMouseOver="this.style.color='#D6D6D6'" onMouseOut="this.style.color='#000000'">help</a> | <a href="#" onClick="gotoWeb();" style="text-decoration: none; color:#000000; weight: bold;" onMouseOver="this.style.color='#D6D6D6'" onMouseOut="this.style.color='#000000'">web site</a></td></tr></table></div>
-<div style="width:930px; border-top:4px solid #FFFFFF;border-bottom:0px solid #FFFFFF; border-left:4px solid #FFFFFF; border-right:4px solid #FFFFFF; -moz-border-top-left-radius: 10px 10px; -moz-border-bottom-left-radius: 0px 0px; -moz-border-bottom-right-radius: 0px 0px; -moz-border-top-right-radius: 10px 10px; border-top-left-radius: 10px 10px; border-bottom-left-radius: 0px 0px; border-bottom-right-radius: 0px 0px; border-top-right-radius: 10px 10px; background-color:#4B6C88; padding-left:20px; padding-right:10px; height:50px">
-<table align="right" border="0px" valign="bottom" style="margin-top:12px; margin-bottom:0px; "><tr>
-<td width="90px" align="center" class="menutitle"><div style="width:80px;" class="menuTitleDiv"><a href="samples.html" alt="List Of Samples" title="List Of Samples">Samples</a></div></td><td width="90px" align="center" class="menutitle"><div style="width:80px;" class="menuTitleDiv"><a href="projects.html" alt="List Of Projects" title="List Of Projects">Projects</a></div></td><td width="90px" class="menutitle"><div style="width:80px;" class="menuTitleDiv"><a href="tools.html" alt="List Of Tools" title="List Of Tools">Tools</a></div></td><td width="110px" align="center" class="menutitle"><div style="width:100px;" class="menuTitleDivSelect"><a href="peopleLabs.html" alt="List Of People and Labs" title="List Of People and Labs">People & Labs</a></div></td><td width="90px" align="center" class="menutitle"><div style="width:80px" class="menuTitleDiv"><a href="providers.html" alt="List Of Providers" title="List Of Providers">Providers</a></div></td></tr></table></td></tr></table></div>
+font-size: 12px; color: #000000; text-decoration: none; margin-bottom: 0px;"><table width="938px" border="0px" cellspacing="0px" cellpadding="0px"><tr height="40px" valign="middle" align="left"><td style="padding-left:80px; width:50%"><font color="white" size="5px" style="font-family:Arial"><b>Research Project Manager</b></font><br><font color="black" size="2px" style="font-family:Arial; padding-left:4px;"><i>organize and keep track of your research data!</i></font></td><td valign="bottom" width="50%" align="right"><div style="width:140px; height:18px; text-align:center;background-color:;padding-right:2px; padding-top:3px;"><a href="db_setup.html" style="text-decoration: none; color:#000000; font-size:12px;" onMouseOver="this.style.color='#FFFFFF'" onMouseOut="this.style.color='#000000'">settings</a> | <div style="display:none"><a href="#" style="text-decoration: none; color:#000000; font-size:12px;" onMouseOver="this.style.color='#FFFFFF'" onMouseOut="this.style.color='#000000'" onClick="showBackupDBDiv();">backup db</a></div></div></td></tr></table></div>
+<div style="width:960px; border-top:4px solid #FFFFFF;border-bottom:0px solid #FFFFFF; border-left:4px solid #FFFFFF; border-right:4px solid #FFFFFF; border-top-left-radius: 10px 10px; border-bottom-left-radius: 0px 0px; border-bottom-right-radius: 0px 0px; border-top-right-radius: 0px 0px; background-color:#4B6C88; padding-left:300; padding-right:0; height:40px"><button id="samplesList" alt="List Of Samples" title="List Of Samples" class="menuTitleDiv" onClick="parent.location='samples.html'" style="border-top-left-radius: 2px 2px; border-bottom-left-radius : 2px 2px; margin-left:400px; margin-top:10px; border-left: 0px solid #000000; cursor:pointer;">Samples</button><button id="ProjectsList" alt="List Of Projects" title="List Of Projects" class="menuTitleDiv"  onClick="parent.location='projects.html'" style="border-left: 0px solid #000000; cursor:pointer;">Projects</button><button id="ToolsList" alt="List Of Tools" title="List Of Tools" class="menuTitleDiv"  onClick="parent.location='tools.html'" style="border-left: 0px solid #000000; cursor:pointer">Tools</button><button id="peopleLabsList" alt="People & Labs" title="People & Labs" class="menuTitleDivSelect"  onClick="parent.location='peopleLabs.html'" style="border-left: 0px solid #000000;">People & Labs</button><button id="ResourcesList" alt="List Of Resources" title="List Of Resources" class="menuTitleDiv"  onClick="parent.location='resources.html'" style="border-top-right-radius: 2px 2px; border-bottom-right-radius: 2px 2px; border-left: 0px solid #000000; cursor: pointer;">Resources</button></div>
 <div id="container" class="container">
 <input name="displayOption" value="" id="displayOption" type="hidden">
 <!--  BEGIN LEFT RAIL  -->
-<div id="leftRail" class="leftRail" style="width: 500px; border:1px solid #000000; float: left; padding-left:0px; padding-right:0px; padding-top:0px; padding-bottom:0px; margin-left: 10px; height: 704px; overflow:hidden;">
+<div id="leftRail" class="leftRail" style="width: 500px; border:1px solid #000000; float: left; padding-left:0px; padding-right:0px; padding-top:0px; padding-bottom:0px; margin-left: 0px; height: 704px; overflow:hidden;">
 <div id="noprint">
-<div style="width:500px; height:34px; background-color:#4B6C88; border-bottom:1px solid #000000; margin-left:0px; margin-right:0px; padding-top:2px; padding-bottom:5px; padding-right:0px; padding-left:0px; margin-bottom: 10px; -moz-border-top-left-radius: 4px 4px; -moz-border-bottom-left-radius: 4px 4px; -moz-border-bottom-right-radius: 4px 4px; -moz-border-top-right-radius: 4px 4px; border-top-left-radius: 4px 4px; border-bottom-left-radius: 0px 0px; border-bottom-right-radius: 0px 0px; border-top-right-radius: 4px 4px;"><table width="480px" border="0px" align="center"><tr><td width="100px">Labs & People</td><td width="180px" align="left">
-<form name="toolDisplay_form" style="margin-top:0px">
-		<select name="btn_showItemsByStatus" id="btn_showItemsByStatus" style="width:160px; -moz-border-radius: .2em; -webkit-border-radius: .2em; order-radius: .2em; background: #B8D3EE; color: #FFFFFF; float: left; height:20px;">
+<div style="width:500px; height:30px; background-color:#4B6C88; border-bottom:1px solid #000000; margin-left:0px; margin-right:0px; padding-top:2px; padding-bottom:2px; padding-right:0px; padding-left:0px; margin-bottom: 10px; -moz-border-top-left-radius: 4px 4px; -moz-border-bottom-left-radius: 4px 4px; -moz-border-bottom-right-radius: 4px 4px; -moz-border-top-right-radius: 4px 4px; border-top-left-radius: 4px 4px; border-bottom-left-radius: 0px 0px; border-bottom-right-radius: 0px 0px; border-top-right-radius: 4px 4px;"><table width="480px" border="0px" align="center"><tr><td width="100px" align="right">Show</td><td width="180px" align="left">
+<form name="peopleLabsDisplay_form" style="margin-top:0px">
+		<select name="btn_showItemsByStatus" id="btn_showItemsByStatus" style="width:160px; -moz-border-radius: .2em; -webkit-border-radius: .2em; order-radius: .2em; background: #B8D3EE; color: #FFFFFF; float: left; height:20px;" onChange="showForm(this.options[selectedIndex].value);">
 			<option value="-1">---</option>
-			<option value="0" id="showActivePeople"> Active People</option>
-			<option value="1" id="showAllPeople"> All People</option>
-			<option value="2" id="ShowActiveLabs"> Active Labs</option>
-			<option value="2" id="ShowAllLabs"> All Labs</option>
+			<option value="0" id="showPeople"> People</option>
+			<option value="1" id="showLabs"> Labs / Institutions</option>
 		</select>
-	</form>
-	</td><td width="100px"><div id="newPeopleButton" style="width:100px; display:block;margin-bottom:2px; margin-top:2px; float:right; margin-right:4px;"><button onClick="formPeople(); check_PeopleName();" id="newPeople" class="insert_new" style="width:95px"><img src="images/btn_person.png" width="15px" height="15px" align="baseline">&nbsp;<b>new person</b></button></div></td><td width="80px"><div id="newLabButton" style="width:70px; display:block;margin-bottom:2px; margin-top:2px; float:right; margin-right:4px;"><button onClick="formLab(); check_LabName();" id="newLab" class="insert_new" style="width:70px"><img src="images/btn_labs.png" width="15px" height="15px" align="baseline">&nbsp;<b>new Lab</b></button></div></td></tr></table>
+</form>
+	</td><td width="180px"><div id="btnObject_item"></div></td></tr></table>
 </div>
-
-	<div id="toolList" class="toolList" style="margin-top: 50px; padding-bottom: 0px; margin-bottom: 0px; margin-left: 10px; padding-left:0px;  margin-right: 0px; width:350px;"></div>
+	<div id="listObject_Item" class="listObject_Item" style="margin-top: 50px; padding-bottom: 0px; margin-bottom: 0px; margin-left: 10px; padding-left:0px;  margin-right: 0px; width:460px;"></div>
 </div>
 </div>
 <!--  END LEFT RAIL  -->
 
 <!--  BEGIN CENTER RAIL  -->
-<div id="centerRail" class="centerRail" align="center" style="border:1px solid #000000; width:400px; float:right; margin-top:0px; margin-right:10px; height:700px; margin-bottom:0px; padding-bottom:0px;">
-<div style="width:370px; height:34px; background-color:#4B6C88; border-bottom:1px solid #000000; margin-left:0px; margin-right:0px; padding-top:2px; padding-bottom:5px; padding-right:0px; padding-left:0px; margin-bottom: 10px; -moz-border-top-left-radius: 4px 4px; -moz-border-bottom-left-radius: 4px 4px; -moz-border-bottom-right-radius: 4px 4px; -moz-border-top-right-radius: 4px 4px; border-top-left-radius: 4px 4px; border-bottom-left-radius: 0px 0px; border-bottom-right-radius: 0px 0px; border-top-right-radius: 4px 4px;">People</div>
+<div id="centerRail" class="centerRail" align="center" style="border:1px solid #000000; width:445px; float:right; margin-top:0px; margin-right:0px; height:700px; margin-bottom:0px; padding-bottom:0px;">
 
 </div>
 <!--  END CENTER RAIL  -->
 
-
-
 <div id="copyright" class="copyright"><b>Research Project Manager (c) 2012</b></div>
 </div>	
-  </body>
+ </body>
 </html>
 
 <script>
-
 ///////////////////////////////////////////////////////////////////////////////////////
 //      FUNCTIONS                                                                    //
 ///////////////////////////////////////////////////////////////////////////////////////
-function showListTools(n){
-	toolList.innerHTML = '';
-    db.transaction(function(tx) {
-		if(n == 2){ //Show all tools
-			var selectAlltools = "SELECT * FROM toolList WHERE toolList.delStatus = 0";
-			var btn_changeStatus;
-			var action;
-			var alt_btnChangeStatus;
-		}
-		else if(n == 1){ //Show archived tools
-			var selectAlltools = "SELECT * FROM toolList WHERE toolList.archiveStatus = 1 AND toolList.delStatus = 0";
-			// show wake-up button
-			var btn_changeStatus = 'btn_wakeup.png';
-			var alt_btnChangeStatus = 'make active'; 
-			var action = 'activeTool';
-			var displayEditBtn = "display: none";
-		}
-		else{ //default show active tools
-var selectAlltools = "SELECT * FROM toolList WHERE toolList.archiveStatus = 0 AND toolList.delStatus = 0";
-			//show button sleep (hide)
-			var btn_changeStatus = 'btn_sleep.png';
-			var alt_btnChangeStatus = 'archive';
-			var action = 'archiveTool';
-			var displayEditBtn = "display: block";
-		}
-		tx.executeSql(selectAlltools, [], function(tx, result) {
-			dataset = result.rows;
-			var count = dataset.length;
-			var toolArchiveStatus;
-			for (var i = 0, item = null; i < count; i++) {
-				item = dataset.item(i);
-				toolArchiveStatus = item['archiveStatus'];
-			// When showing all tools (n=2), Show button sleep or wakeup depending on the status of the tool
-				if(n == 2){
-					if(item['archiveStatus'] == 1){ //tool is archived (hidden)
-						btn_changeStatus = 'btn_wakeup.png';
-						alt_btnChangeStatus = 'make active'; 
-						action = 'activeTool';
-						displayEditBtn = 'display: none';
-					}
-					else{ //Sample is awake (not=hidden)
-						btn_changeStatus = 'btn_sleep.png';
-						alt_btnChangeStatus = 'archive'; 
-						action = 'archiveTool';
-						displayEditBtn =  "display: block";
-					}
-				}
-				var singleToolStyleOdd='list-style: none; border:1px solid #BCBCBC; padding-left:2px; font-size:11px; font-family: Arial; color: #000000; margin-top: 4px; margin-bottom: 2px; margin-right:2px; background-color:#CCCCCC; display:block; width:220px; overflow: hidden; height:20px';
-				var singleToolStyleEven='list-style: none; border:1px solid #BCBCBC; padding-left:2px; font-size:11px; font-family: Arial; color: #000000; margin-top: 4px; margin-bottom: 2px; margin-right:2px; background-color:#EEEEEE; display:block; width:220px; overflow: hidden;  height:20px;';
-				if(i%2 == 0){ var thisStyle = singleToolStyleEven; }
-				else{ var thisStyle = singleToolStyleOdd; }
-				var DivId = 'div'+item['id'];
-				var colorCode = item['colorCode'];
-				var idTool = item['id'];
-				var toolName = item['toolName'];
-				var shortToolName = toolName.substring(0,10);
-				var toolText = '<div id="'+DivId+'" style="'+thisStyle+'" class="listToolsDiv"><table width="220px" border="0px" cellspacing="0px" cellpadding="0px"><tr height="20px"><td><table width="220px" border="0px" cellspacing="0px" cellpadding="0px"><tr><td width="18px"><div style="width:20px; height:20px; border: 0px solid #000000; background:'+ colorCode + ';"><img src="images/btn_tool.png"></div></td><td width="142px"><div id="ttTlName'+idTool+'" class="ttPrName" alt="'+toolName+'" title="'+toolName+'" style="border:0px solid #000000">'+ shortToolName+'</div></td><td width="15px"><div style="border:1px solid #CCCCCC; width:14px;'+displayEditBtn+';"><a href="#" onclick="editTool('+idTool+')"><img src="images/btn_edit.png" width="14px" alt="edit" title="edit"></a></div></td><td width="20px"><a href="#" onclick="'+action+'('+idTool+')"><img src="images/'+btn_changeStatus+'" alt="'+alt_btnChangeStatus+'" title="'+alt_btnChangeStatus+'"></a></td><td width="20px"><a href="#" onclick="deleteTool('+idTool+')"><img src="images/btn_delete.png" alt="delete" title="delete" width="12px" height="12px"></a></td></tr></table></td></tr></table></div>';
-				toolList.innerHTML += toolText;
-			}
-			if(n == 2){ //Counts the number of "all tools"
-					if(count > 0 ){
-						showTotalNumbTools.innerHTML = 'Total of <b>'+count+'</b> <i>tools</i>';
-					}
-					else{
-						showTotalNumbTools.innerHTML = '<b>0</b> <i>tools</i>';
-					}
-				}
-				else if(n == 1){ //Counts "hidden" or "Archived" tools
-					if(count > 0 ){
-						showTotalNumbTools.innerHTML = 'Total of <b>'+count+'</b> <i>archived tools</i>';
-					}
-					else{
-						showTotalNumbTools.innerHTML = '<b>0</b> <i>archived tools</i>';
-					}
-					
-				}
-				else { //Counts the number of " active tools"
-					if(count > 0 ){
-						showTotalNumbTools.innerHTML = 'Total of <b>'+count+'</b> <i>active tools</i>';
-					}
-					else{
-						showTotalNumbTools.innerHTML = '<b>0</b> <i>active tools</i>';
-					}
-				
-				}
-		});
+//////////////////// Edit Labs   ///////////////////////////////
+function editLab(idLab){
+	showFormLabs();
+	showSubmitButton();
+	db.transaction(function(tx) {
+	var selectThisLab = "SELECT * FROM Lab WHERE id = ?";
+		tx.executeSql(selectThisLab, [idLab], function(tx, result){
+			var dataset = result.rows;
+			var lab = dataset.item(0);
+			var name = lab['name'];
+			var institution = lab['institution'];
+			var city = lab['city'];
+			var zipcode = lab['zipCode'];
+			var state = lab['state'];
+			var country = lab['country'];
+			var archiveStatus = lab['archiveStatus'];
+			var delStatus = lab['delStatus'];
+			document.getElementById("idLab").value = idLab;
+			document.getElementById("delStatus_Lab").value =  delStatus;
+			document.getElementById("archiveStatus_Lab").value =  archiveStatus;
+			document.getElementById("name_Lab").value = name;
+			document.getElementById("city_Lab").value =  city;
+			document.getElementById("zipcode_Lab").value =  zipcode;
+			document.getElementById("state_Lab").value =  state;
+			document.getElementById("country_Lab").value =  country;
+			check_LabName();
+		}, onError);
 	});
 }
 
+//////////////////// Edit Person   ///////////////////////////////
+function editPerson(idPerson){
+	showFormPeople();
+	showSubmitButton();
+	db.transaction(function(tx) {
+	var selectThisPerson = "SELECT * FROM Person WHERE id = ?";
+		tx.executeSql(selectThisPerson, [idPerson], function(tx, result){
+			var dataset = result.rows;
+			var person = dataset.item(0);
+			var personFirstName = person['personFirstName'];
+			var personFamilyName = person['personFamilyName'];
+			var email1 = person['email1'];
+			var email2 = person['email2'];
+			var telephone1 = person['telephone1'];
+			var telephone2 = person['telephone2'];
+			var LabAffId = person['LabAffId'];
+			var archiveStatus = person['archiveStatus'];
+			var delStatus = person['delStatus'];
+			var LabAffId = person['LabAffId'];
+			document.getElementById("idPerson").value = idPerson;
+			document.getElementById("personFirstName").value = personFirstName;
+			document.getElementById("personFamilyName").value =  personFamilyName;
+			document.getElementById("archiveStatus").value =  archiveStatus;
+			document.getElementById("email1").value = email1;
+			document.getElementById("email2").value =  email2;
+			document.getElementById("telephone1").value =  telephone1;
+			document.getElementById("telephone2").value =  telephone2;
+			document.getElementById("delStatus").value =  delStatus;
+			if(document.getElementById("LabAffId_input")){
+				document.getElementById("LabAffId_input").value = LabAffId;
+				var select = document.getElementById("listLab_select");
+			var items = select.getElementsByTagName("option");
+				for (var x = 0; x < items.length; x++) { 
+					var t = select.options[x].value;
+					if (select.options[x].value == LabAffId) { 
+						select.options[x].selected = true;
+					} 
+				}
+			}
+		}, onError);
+	});
+}
 
+//////////////////// Show Forms People OR Labs
+function showForm(item){
+	if(item == 0){  // selected option value is 0 i.e People
+		var button = '<div id="newPeopleButton" style="width:100px; display:block;margin-bottom:2px; margin-top:2px; float:right; margin-right:4px;"><button onClick="showFormPeople();" id="newPeople" class="insert_new" style="width:95px"><img src="images/btn_person.png" width="15px" height="15px" align="baseline">&nbsp;<b>new person</b></button></div>';
+		btnObject_item.innerHTML = button;
+		showListPeople();
+		
+		//CenterRail : FormPeople
+		showFormPeople();
+	
+	}
+	else if(item == 1){ // selected option value is 1 i.e Labs
+		var button = '<div id="newLabButton" style="width:100px; display:block;margin-bottom:2px; margin-top:2px; float:right; margin-right:4px;"><button onClick="showFormLabs(); check_LabName();" id="newLab" class="insert_new" style="width:95px"><img src="images/btn_labs.png" width="15px" height="15px" align="baseline">&nbsp;<b>new Lab</b></button></div>';
+		btnObject_item.innerHTML = button;
+		showListLabs();
+		//CenterRail : FormLabs
+		showFormLabs();
+	}
+}
+
+/////////////////////////////////////////////////
+///////// Show List of Persons         //////////
+/////////////////////////////////////////////////
+function showListPeople(){
+	listObject_Item.innerHTML = '';
+    db.transaction(function(tx) {
+		var selectAllPeople = "SELECT * FROM Person WHERE Person.delStatus = 0 ORDER BY Person.personFamilyName ASC";
+		tx.executeSql(selectAllPeople, [], function(tx, result) {
+			dataset = result.rows;
+			var person;
+			var count = dataset.length;
+			for (var i = 0, person = null; i < count; i++) {
+				person = dataset.item(i);
+				var idPerson = person['id'];
+				var firstName = person['personFirstName'];
+				var familyName = person['personFamilyName'];
+				var personText = '<table width="420px" border="0px" style="border-bottom:1px solid #000000;  margin-left:20px;" cellspacing="5px" cellpadding=5px"><tr height="30px"><td width="375px">'+ familyName+'('+firstName+')</td><td width="15px"><div style="border:1px solid #CCCCCC; width:14px;"><a href="#" onclick="editPerson('+idPerson+')"><img src="images/btn_edit.png" width="14px" alt="edit" title="edit"></a></div></td><td width="20px"><div class="btn_deleteSample" onclick="deletePerson('+idPerson+')"><img src="images/btn_delete.png" alt="delete" title="delete" width="12px" height="12px"></div></td></tr></table>';
+				listObject_Item.innerHTML += personText;
+			}
+		});
+	});
+}
+/////////////////////////////////////////////////
+///////// Show List of Labs         //////////
+/////////////////////////////////////////////////
+function showListLabs(){
+	listObject_Item.innerHTML = '';
+    db.transaction(function(tx) {
+		var selectAllLabs = "SELECT * FROM Lab WHERE Lab.delStatus = 0 ORDER BY Lab.name ASC";
+		tx.executeSql(selectAllLabs, [], function(tx, result) {
+			dataset = result.rows;
+			var lab;
+			var count = dataset.length;
+			for (var i = 0, lab = null; i < count; i++) {
+				lab = dataset.item(i);
+				var idLab = lab['id'];
+				var name = lab['name'];
+				var institution = lab['institution'];
+				var labText = '<table width="420px" style="border-bottom:1px solid #000000; margin-left:20px;" cellspacing="5px" cellpadding="5px" ><tr height="30px"><td width="375px" valign="middle">'+ name+' ('+institution+')</td><td width="15px"  valign="middle"><div style="border:1px solid #CCCCCC; width:14px;"><a href="#" onclick="editLab('+idLab+')"><img src="images/btn_edit.png" width="14px" alt="edit" title="edit"></a></div></td><td width="20px" valign="middle"><div class="btn_deleteSample" onclick="deleteLabs('+idLab+')"><img src="images/btn_delete.png" alt="delete" title="delete" width="10px" height="10px"></div></td></tr></table>';
+				listObject_Item.innerHTML += labText;
+			}
+		});
+	});
+}
+///////////////////////////////////////////////
+///////  Delete Lab / Person                ///
+///////////////////////////////////////////////
+function deleteLabs(id){
+	var answer = confirm("Do you really want to delete this Lab?");
+	if (answer){
+		var delStatus = 1; //delete the Lab (delStatus)
+		db.transaction(function(tx) {	
+		var updateDeleteLab = "UPDATE Lab SET delStatus = ? WHERE id = ?";
+		tx.executeSql(updateDeleteLab, [delStatus, id], function(tx){
+		showListLabs();
+		centerRail.innerHTML = '';   //empty the div "content	  
+	  }, onError);
+		}); 
+	}	
+}
+function deletePerson(id){
+	var answer = confirm("Do you really want to delete this Person?");
+	if (answer){
+		var delStatus = 1; //delete the Sample (delStatus)
+		db.transaction(function(tx) {	
+		var updateDeletePerson = "UPDATE Person SET delStatus = ? WHERE id = ?";
+		tx.executeSql(updateDeletePerson, [delStatus, id], function(tx){
+		showListPeople();
+		centerRail.innerHTML = '';   //empty the div "content	  
+	  }, onError);
+		}); 
+	}	
+}
 function onError(tx, error) {
     alert(error.message);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//                BACKUP THE DATABASE                                 ///////
+/////////////////////////////////////////////////////////////////////////////
+function showBackupDBDiv(){
+	var textDiv = '<div id="fade" style="position:fixed; top:0px; left:0px; width:100%; height:100%; width:100%; opacity: 0.8; background-color:#000000;z-index:800;"></div><div id="backupDBForm" style="position: fixed; top: 20%; left: 30%; height: 350px; width:500px; background-color:#8BA3B7; z-index: 801; border-top-left-radius: 5px 5px; border-bottom-left-radius: 5px 5px; border-bottom-right-radius: 5px 5px; border-top-right-radius: 5px 5px; padding: 10px 10px 10px 10px; -webkit-box-shadow : 0px 0px 0px #B0B0B0; "><table align="right"><tr><td><a href="" id="btn_closeBackUpDiv">close window</a></td></tr></table></table><table style="" cellspacing="0px; cellpadding="0px" width="450px" border="1px" align="center"><tr><td><div contenteditable>My epic novel that I want to lose.</div></td></tr><tr><td><input type="text" value="MyFile.txt" placeholder="filename.txt"><button onclick="downloadFile()">Create file</button> <output></output></td></tr></table></div></div>';
+	document.body.innerHTML += textDiv;
 }
  </script>

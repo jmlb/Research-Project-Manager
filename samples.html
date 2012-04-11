@@ -15,7 +15,7 @@ if (!window.openDatabase) { alert('Databases are not supported in this browser.'
 else{
 	var shortDbName = dbName.replace(/\s/g, "");
 	var version = '1.0';    
-	var maxSize = 20000000; //  bytes  
+	var maxSize = 50000000; //  bytes  
 	var db = openDatabase(shortDbName, version, dbName, maxSize);
 }
 </script>
@@ -59,12 +59,12 @@ function argSample(){
 	var divArgSampleHeight = divArgSample.style.height.replace("px","");
 	if(divArgSampleHeight > 51){
 		divArgSample.style.height = "50px";
-		divArgSample.style.border="1px solid #F7DFC5";
+		divArgSample.style.border="1px solid #CFCFCF";
 		document.getElementById("editArgSample").innerHTML = '<img src="images/collapse_arrow.png" width="20px" height="20px"  title="show all the arguments of the sample">';
 	}
 	else{
 	divArgSample.style.height = "270px";
-	divArgSample.style.border="1px solid #F7DFC5";
+	divArgSample.style.border="2px solid #CFCFCF";
 	document.getElementById("editArgSample").innerHTML = '<img src="images/expand_arrow.png" width="20px" height="20px">';
 	}
 }
@@ -124,6 +124,14 @@ $(document).ready(function () {
 			$("#btn_edit"+levelNumb).html('<img src="images/collapse_arrow.png" width="20px" height="20px">');			
 		}
 	});
+
+///////////////////////////////////////////////
+//Close the window BackUpDB   /////////////////
+///////////////////////////////////////////////	
+$("#backupDBForm").delegate("#btn_closeBackUpDiv", "click", function(){
+		$("#fade").remove();
+		$("#backupDBForm").remove();
+});
 ///////////////////////////////////////////////
 //Drag and Drop   /////////////////////////////
 ///////////////////////////////////////////////
@@ -145,18 +153,19 @@ $(document).ready(function () {
 });
 
 ////////////////////////////////////////////////////////////
-// Droppable on the fly
+// Droppable on the fly  (<div class="drag" id="temBox_'+idTemplate+'" name="tempBox_'+idTemplate+'">'+templateName+'</div>   			<div id="module" class="drag" name="ModSL">Single Layer</div> 
 ////////////////////////////////////////////////////////////
 function droppableOnTheFly(event,ui){
-		$(this).append($(ui.draggable).clone());
 		var modName = $(ui.draggable).attr("name");
-		$(this).attr("name", modName);
-		$(this).droppable( 'disable' );
+		if(modName.indexOf("Mod") == 0){ 		//This is for a module drop
+		$(this).append($(ui.draggable).clone());
+		$(this).attr("name", modName); //Give the name attribute of the dragged module
+		$(this).droppable( 'disable' ); //The draggable module box is not moved but rather duplicated on the droppable box
 		var thiscount = $(this).attr("id");
 		thiscount = thiscount.replace("level_","");
-		var textLevel = '<div style="position:relative; border:0px solid #000000; bottom:20px; left:130px; width:200px; padding-top:2px; border-bottom: 1px solid #000000;" align="right" id="tagLevel_'+thiscount+'"><table border="0px" cellspacing="0px" cellpadding="0px" width="145px"><tr><td width="100px"><b>Level '+thiscount+'</td><td width="20px"><div class="delLevel" name="del_'+thiscount+'" id="btn_del'+thiscount+'" onClick="deleteLevel(\''+modName+'\', '+thiscount+');" style="visibility:hidden;"><img src="images/btn_deleteLevel.png" width="20px" height="20px" class="deleteLevel" title="delete this level"></div></td><td align="right" width = 22px"><div width="20px" height="20px" class="editLevel" name="edit_'+thiscount+'" id="btn_edit'+thiscount+'"><img src="images/collapse_arrow.png" width="20px" height="20px"></div></td></tr></table></div>';
+		var textLevel = '<div style="position:relative; border:0px solid #000000; bottom:20px; left:130px; width:200px; padding-top:2px; border-bottom: 1px solid #000000;" align="right" id="tagLevel_'+thiscount+'"><table border="0px" cellspacing="0px" cellpadding="0px" width="145px"><tr><td width="100px"><b>Level '+thiscount+'</td><td width="20px"><div class="delLevel" name="del_'+thiscount+'" id="btn_del'+thiscount+'" onClick="deleteLevel(\''+modName+'\', '+thiscount+');" style="visibility:hidden;"><img src="images/btn_deleteLevel.png" width="20px" height="20px" class="deleteLevel" title="delete this level"></div></td><td align="right" width = "22px"><div width="20px" height="20px" class="editLevel" name="edit_'+thiscount+'" id="btn_edit'+thiscount+'"><img src="images/collapse_arrow.png" width="20px" height="20px"></div></td></tr></table></div>';
 		$("#level_"+thiscount).append(textLevel); 
-		var formText = eval('arg'+modName+'(-1,'+thiscount+', "showEmptyForm")'); //idsample=-1, just to state that no idsample is passed here
+		var formText = eval('arg'+modName+'(-1,'+thiscount+', "showEmptyForm", "sample")'); //idsample=-1, just to state that no idsample is passed here (argModSubstrate(idObjectValue,iteration,action,object)
 		$("#argBox_lev"+thiscount).append(formText);
 		newcount = parseInt(thiscount)+ 1;
 		var newLevelBox = '<tr><td align="center"><div class="hostModObj" id="level_'+newcount+ '"  name="" style="position:relative;"></div><div style="width:100%; height:0px; border:0px solid #000000; overflow:hidden; margin-bottom:10px; margin-top:2px" id="argBox_lev'+newcount+'" class="argBox" name=""></div></td></tr>';
@@ -164,6 +173,75 @@ function droppableOnTheFly(event,ui){
 		$("#centerRail").find('#level_'+newcount).droppable({
 			drop: droppableOnTheFly,
 		});
+	}
+	else if(modName.indexOf("tempBox") == 0){ //This is for a template drop
+			var argModParameterIn = confirm("Do you want to include the parameter?");
+	if (argModParameterIn){
+		var includeParameters = "yes";
+	}
+	else{
+		var includeParameters = "no";
+	}
+		var idTemplate = modName.replace("tempBox_",""); //Get the id of the Template (<div class="drag" id="temBox_'+idTemplate+'" name="tempBox_'+idTemplate+'">'+templateName+'</div> )
+		var refLevel = $(this).attr("id");
+		refLevel = refLevel.replace("level_","");
+		refLevel = parseInt(refLevel);
+		db.transaction(function(tx){
+			var selectThisTemplateLifeLine = "SELECT * FROM TemplateLifeLine WHERE idTemplate = ? AND delStatus = ? ORDER BY ModLevel ASC";
+			var datasetMod;
+			tx.executeSql(selectThisTemplateLifeLine, [idTemplate, 0], function(tx, resMod) {
+				datasetMod = resMod.rows;
+				var thisLifeLine;
+				//Backup the last level of the TemplateLifeLine
+				document.getElementById("lastLevelInDB").value = datasetMod.length-1;
+				var val = document.getElementById("lastLevelInDB").value;
+				console.log('The last level in DB is: '+val);
+				if(datasetMod.length > 0){ // execute only if at least a single Mod is found
+					//Build the TemplateLifeLine
+							var listLevelsTable = document.getElementById("listLevels");
+							listLevelsTable.deleteRow(refLevel); //Remove the row where the template box is dropped
+					for (var i = 0, thisLifeLine = null; i < datasetMod.length; i++) {
+						var thiscount = refLevel + i;
+						thisLifeLine = datasetMod.item(i);
+						var thisModTble = thisLifeLine['ModTble'];
+						thisModTble = thisModTble.replace("ModTemp","Mod");
+						var thisIdMod = thisLifeLine['idMod'];
+						var thisModLevel = thisLifeLine['ModLevel'];
+						var listLevelsTable = document.getElementById("listLevels");
+					//Create a new row and a new cell
+						var listLevelsTable = document.getElementById("listLevels");
+						var newRow = listLevelsTable.insertRow(thiscount);
+						var newCell = newRow.insertCell(0);
+					//Get the long name of the Mod (ModLongName) to display on the drag and drop box
+						var pos = ListModShortNameArr.indexOf(thisModTble);
+						var ModLongName = ListModLongNameArr[pos];
+						var textNewCell = '<div class="hostModObj" id="level_'+thiscount+'" name="'+thisModTble+'" style="position:relative;z-index:0"><div class="drag" id="module" name="'+thisModTble+'">'+ModLongName+'</div><div style="position:relative; border:0px solid #000000; bottom:20px; left:130px; width:200px; padding-top:2px; border-bottom: 1px solid #000000;" align="right"><table border="0px" cellspacing="0px" cellpadding="0px" width="145px"> <tr><td width="100px"><b>Level '+thiscount+'</b></td><td width="20px"><div class="delLevel" name="del_'+thiscount+'" id="btn_del'+thiscount+'" onClick="deleteLevel(\''+thisModTble+'\', '+thiscount+');"  style="visibility:hidden;"><img src="images/btn_deleteLevel.png" width="20px" height="20px" class="deleteLevel" title="delete this level"></div></td><td align="right" width = 22px"><div width="20px" height="20px" class="editLevel" name="edit_'+thiscount+'" id="btn_edit'+thiscount+'"><img src="images/collapse_arrow.png" width="20px" height="20px"></div></td></tr></table></div></div><div style="width:100%; height:0px; border:0px solid #000000; overflow:hidden; margin-bottom:10px; margin-top:2px;" id="argBox_lev'+thiscount+'" class="argBox"></div>';
+						newCell.innerHTML = textNewCell;
+						newCell.width = "380px";
+						newCell.align = "center";
+						newRow.height="15px";
+					//Write the form in the ArgMod Box
+						var thisModForm = window["arg"+thisModTble](idTemplate, thiscount, "showEmptyForm", "template", null);
+						document.getElementById("argBox_lev"+thiscount).innerHTML = thisModForm;
+						if(includeParameters == "yes"){
+						window["arg"+thisModTble](idTemplate, i, "edit", "template", thiscount);
+						}
+					// Get data in the database for thisModLevel and write it in the the form 'thisModForm'
+					}
+					// add an empty droppable box
+					var newRow = listLevelsTable.insertRow(-1);
+					var newCell = newRow.insertCell(0);
+					var thisModLevel = thiscount + 1;
+					var textNewCell = '<div class="hostModObj" id="level_'+thisModLevel+'" name="" style="position:relative;z-index:0"></div><div style="width:100%; height:0px; border:0px solid #000000; overflow:hidden; margin-bottom:10px; margin-top:2px;" id="argBox_lev'+thisModLevel+'" class="argBox"></div>';
+					newCell.innerHTML = textNewCell;
+					newCell.width = "380px";
+					newCell.align = "center";
+					newRow.height="15px"
+					makeItDroppable(thisModLevel);
+					}
+				}, onError);
+		});
+	}
  }
 ///////////////////////////////////////////////////
 // Make a div to be droppable
@@ -173,12 +251,23 @@ function makeItDroppable(levelNumb){
 		drop: droppableOnTheFly,
 	});
 }
+///////////////////////////////////////////////////
+// Make a div to be draggable
+///////////////////////////////////////////////////
+function makeItDraggable(){
+ 	$("#leftRail").find(".drag").draggable({
+		containment: '.container',
+		cursor: 'move',
+		snap: '.hostModObj',
+		helper: 'clone',
+	});
+}
 //////////////////////////////////////////////////////////////////////////
 //The sample Life Line form to be shown in centerRail)               /////
 //////////////////////////////////////////////////////////////////////////
 function sampleForm(){
-	var text = '<table width="540px" cellspacing="1px" cellpadding="1px" style="border-bottom:1px solid #D4D4D4;" border="0px"><tr><td align="left" width="435px"><div id="submitInsertButton" style="width:100px;"><button onClick="insertNewSample(); showInsertSubmitButton();" id="insert_newSample" class="insert_newSample"><img src="images/save_logo.png" width="15px" height="15px" align="baseline">&nbsp;<b>save</b></button></div><div id="submitUpdateButton" style="width:100px; display:none"><button onClick="updateSample();" id="update_Sample" class="update_Sample"><img src="images/update_logo.png" width="15px" align="baseline">&nbsp;<b>update</b></button></div></td><td width="35px"><div id="compareSample" style="width:35px;"><button id="btn_compareSample" onClick="" class="insert_new" style="width:35px; height:28px;"><img src="images/btn_compare.png" height="15px" align="baseline" title="compare with..."></button></div></td><td width="35px"><div id="printbutton" style="width:35px;"><button id="printer" onClick="printDiv(\'centerRail\');"><img src="images/btn_printer.png" width="20px" title="print the sampleLifeLine"></button></div></td><td align="right" width="35px"><div id="submitExpandViewButton" style="width:35px;"><button onClick="expandAllBox();showCompactViewSubmitButton()" id="expand_A"><img src="images/btn_expandAll.png" width="20px" title="expand all modules of this sample"></button></div><div id="submitCompactViewButton" style="width:35px; display:none;"><button onClick="compactAllBox();showExpandViewSubmitButton()" id="compact_A"><img src="images/btn_collapseAll.png" width="20px"></button></div></td></tr></table><br>';
-	text += '<div id="argSample" style="overflow:hidden; height:50px; margin-bottom:10px; border:0px solid #F7DFC5; width: 550px; margin-left:30px; margin-right:30px; position: relative;"><input type="hidden" id="archiveStatus_Sample" value="0"/><input type="hidden" id="delStatus_Sample" value="0"/><input type="hidden" id="idSample" value=""/><input type="hidden" id="lastLevelInDB" value="-1"/><div style="width:60px; height:10px; position: relative; left:265px;" class="editArgSample" name="editArgSample" onClick="argSample()" id="editArgSample"><img src="images/collapse_arrow.png" width="20px" height="20px" title="show all the arguments of the sample"></div><div id="err_sampleName" class="err_sampleName" style="display: block; position:absolute; top: 20px; right:20px; background-color:#FFF8AD; border: 0px solid #FFF15B; height: 20px; padding-top:8px; padding-bottom:1px; width:200px; text-align:center;"><div style="font-size: 0px; line-height: 0%; width: 0px; border-bottom: 10px solid #FFF8AD; border-left: 20px solid transparent; border-right: 20px solid transparent; position: absolute; top:11px; left:-14px;"></div><div>this sample name is already in use</div></div><table border="0px solid #000000" style="width:520px;  cellspacing:0px; cellpadding: 0px; margin: 2px 10px 0px 0px; align: left;"><tr height="35px"><td style="width: 120px; align: left; valign: middle">Name of Sample </td><td style="width: 330px"><input type="text" id="sampleName_Sample" style="width:98%; background-color:#FFFFFF; margin:0px 0px 0px 0px; -webkit-border-radius: 2px; border: 1px solid #D4D4D4; padding: 2px 2px 2px 2px; outline: none;" onkeyup="check_SampleName();" onMouseOver="this.style.backgroundColor=\'#E7E6E6\'" onMouseOut="this.style.backgroundColor=\'#FFFFFF\'"/></td><td style="width: 10px;"></td><td style="width:60px; align: left; valign: middle;"><div id="showIDSample"  style="margin: 0 0 0 0;"></div></td></tr><tr height="35px"><td style="width:120px; align: left; valign: middle;">Creation date</td><td style="width: 400px;" colspan="3" valign="middle" align="left"><input type="text" id="dateCreation_Sample" style="width:80px; background-color:#EAE9E9; margin:0px 0px 0px 0px; -webkit-border-radius: 2px; border: 1px solid #D4D4D4; padding: 2px 2px 2px 2px;" readonly="readonly; margin-right: 2px;"/> &nbsp; &nbsp;<a href="javascript:NewCal(\'dateCreation_Sample\',\'ddmmyyyy\',false,24)" alt="popup must be turned ON" title="popup must be turned ON" style="margin:0px; padding:0px;"><img src="images/btn_calendar.gif" style="width: 20px; border: 0 px solid #000000; margin: 0 4 0 0;" onMouseOver="this.style.width=\'21px\'" onMouseOut="this.style.width=\'20px\'"></a></td></tr><tr height="35px"><td style="width:120px; align: left; valign: middle;">Affiliated project</td><td style="width: 400px; valign: middle"><div id="listProject_selectForm" style="width:280px"></div></td><td  style="valign:middle;" colspan="2"></td></tr><tr height="20px"><td style="width:520px; padding: 0 0 1px 0;" colspan="4">Info:</td></tr><tr height="20px"><td style="align:right; padding: 0 5px 0 5px; align:center;" colspan="4"> <textarea id="comments_Sample" style="width:520px; height:90px; background-color:#EAE9E9; margin:0px 0px 0px 0px; -webkit-border-radius: 2px; border: 1px solid #D4D4D4; padding: 2px 2px 2px 2px; outline: none;" onMouseOver="this.style.backgroundColor=\'#E7E6E6\'" onMouseOut="this.style.backgroundColor=\'#EAE9E9\'"></textarea></td></tr></table></div>';
+	var text = '<table width="540px" cellspacing="1px" cellpadding="1px" style="border-bottom:1px solid #D4D4D4;" border="0px"><tr><td align="left" width="435px"><div id="submitInsertButton" style="width:100px;"><button onClick=" insertNewSample(); showInsertSubmitButton();" id="insert_newSample" class="insert_newSample"><img src="images/save_logo.png" width="15px" height="15px" align="baseline">&nbsp;<b>save</b></button></div><div id="submitUpdateButton" style="width:100px; display:none"><button onClick="updateSample();" id="update_Sample" class="update_Sample"><img src="images/update_logo.png" width="15px" align="baseline">&nbsp;<b>update</b></button></div></td><td width="35px"><div id="comparebutton" style="width:35px; display:none;" onClick="compareSamples()"><button id="compare" style="width:30px; height:28px;"><img src="images/btn_compare.png" width="20px" title="compare with..."></button></div></td><td width="35px"><div id="printbutton" style="width:35px; display:none;"><button id="printer" onClick="printDiv(\'centerRail\');" style="width:30px; height:28px;"><img src="images/btn_printer.png" width="20px" title="print the sampleLifeLine"></button></div></td><td align="right" width="35px"><div id="submitExpandViewButton" style="width:35px;"><button onClick="expandAllBox();showCompactViewSubmitButton()" id="expand_A" style="width:30px; height:28px;"><img src="images/btn_expandAll.png" width="20px" title="expand all modules of this sample"></button></div><div id="submitCompactViewButton" style="width:35px; display:none;"><button onClick="compactAllBox();showExpandViewSubmitButton()" id="compact_A" style="width:30px; height:28px;"><img src="images/btn_collapseAll.png" width="20px"></button></div></td></tr></table><br>';
+	text += '<div id="argSample" style="overflow:hidden; height:50px; margin-bottom:10px; border:1px solid #CFCFCF; width: 550px; margin-left:30px; margin-right:30px; position: relative; background-image: url(images/bckgrdStriped.png);"><input type="hidden" id="archiveStatus_Sample" value="0"/><input type="hidden" id="delStatus_Sample" value="0"/><input type="hidden" id="idSample" value=""/><input type="hidden" id="lastLevelInDB" value="-1"/><div style="width:60px; height:10px; position: relative; left:265px;" class="editArgSample" name="editArgSample" onClick="argSample()" id="editArgSample"><img src="images/collapse_arrow.png" width="20px" height="20px" title="show all the arguments of the sample"></div><div id="err_sampleName" class="err_sampleName" style="display: block; position:absolute; top: 20px; right:20px; background-color:#FFF8AD; border: 0px solid #FFF15B; height: 20px; padding-top:8px; padding-bottom:1px; width:200px; text-align:center;"><div style="font-size: 0px; line-height: 0%; width: 0px; border-bottom: 10px solid #FFF8AD; border-left: 20px solid transparent; border-right: 20px solid transparent; position: absolute; top:11px; left:-14px;"></div><div>this sample name is already in use</div></div><table border="0px solid #000000" style="width:520px;  cellspacing:0px; cellpadding: 0px; margin: 2px 10px 0px 0px; align: left;"><tr height="35px"><td style="width: 120px; align: left; valign: middle">Name of Sample</td><td style="width: 330px"><input type="text" id="sampleName_Sample" style="width:98%; background-color:#FFFFFF; margin:0px 0px 0px 0px; -webkit-border-radius: 2px; border: 1px solid #D4D4D4; padding: 2px 2px 2px 2px; outline: none;" onkeyup="check_SampleName();"/></td><td style="width: 10px;"></td><td style="width:60px; align: left; valign: middle;"><div id="showIDSample"  style="margin: 0 0 0 0;"></div></td></tr><tr height="35px"><td style="width:120px; align: left; valign: middle;">Creation date</td><td style="width: 400px;" colspan="3" valign="middle" align="left"><input type="text" id="dateCreation_Sample" style="width:80px; background-color:#EAE9E9; margin:0px 0px 0px 0px; -webkit-border-radius: 2px; border: 1px solid #D4D4D4; padding: 2px 2px 2px 2px;" readonly="readonly; margin-right: 2px;"/> &nbsp; &nbsp;<a href="javascript:NewCal(\'dateCreation_Sample\',\'ddmmyyyy\',false,24)" alt="popup must be turned ON" title="popup must be turned ON" style="margin:0px; padding:0px;"><img src="images/btn_calendar.gif" style="width: 20px; border: 0 px solid #000000; margin: 0 4 0 0;" onMouseOver="this.style.width=\'21px\'" onMouseOut="this.style.width=\'20px\'"></a></td></tr><tr height="35px"><td style="width:120px; align: left; valign: middle;">Affiliated project</td><td style="width: 400px; valign: middle"><div id="listProject_selectForm" style="width:280px"></div></td><td  style="valign:middle;" colspan="2"></td></tr><tr height="20px"><td style="width:520px; padding: 0 0 1px 0;" colspan="4">Info:</td></tr><tr height="20px"><td style="align:right; padding: 0 5px 0 5px; align:center;" colspan="4"> <textarea id="comments_Sample" style="width:520px; height:90px; background-color:#EAE9E9; margin:0px 0px 0px 0px; -webkit-border-radius: 2px; border: 1px solid #D4D4D4; padding: 2px 2px 2px 2px; outline: none;" onMouseOver="this.style.backgroundColor=\'#E7E6E6\'" onMouseOut="this.style.backgroundColor=\'#EAE9E9\'"></textarea></td></tr></table></div>';
 	text += '<table width="550px"  style="border-top: 2px dotted #D4D4D4; padding-top: 4px;" class="listLevels" cellpadding="0px" cellspacing="0px" align="center" valign="center" id="listLevels"><tr height="15px"><td width="380px" align="center"><div class="hostModObj" id="level_0" name="" style="position:relative;z-index:0"></div><div style="width:100%; height:0px; border:0px solid #000000; overflow:hidden; margin-bottom:10px; margin-top:2px;" id="argBox_lev0" class="argBox"></div></td></tr></table>';
 	document.getElementById("centerRail").innerHTML = text; // append the text form to the div centerRail
 	makeItDroppable(0);	 //make level 0 to be droppable
@@ -190,6 +279,12 @@ function sampleForm(){
  ////////////////////////////////////////////////////////
 function check_SampleName(){
 	var sampleNameValue = sampleName_Sample.value;
+	if(sampleNameValue.length == 0){
+		document.getElementById("insert_newSample").setAttribute("class", "insert_newSampleOff");
+		document.getElementById("insert_newSample").disabled = true;
+		document.getElementById("err_sampleName").style.display = "none";
+	}
+	else{
 	var idThisSample = document.getElementById("idSample").value;
 	var set;
 	var datasetLength;
@@ -205,7 +300,7 @@ function check_SampleName(){
 				document.getElementById("update_Sample").disabled = false;
 				document.getElementById("update_Sample").setAttribute("class", "insert_newSample");
 			}
-			else{ // the name exists
+			else{ // the name exists or the i8nputlength=0
 				if(datasetLength != 0){ // and the length is not zero
 					var sampleNameLength = document.getElementById("sampleName_Sample").value.length;
 					if(sampleNameLength == 0){
@@ -221,26 +316,68 @@ function check_SampleName(){
 					}
 				}
 			}, onError);
-	});	
+	});
 }
- 
+}
+
+ ////////////////////////////////////////////////////////
+ //  check that the sample name does not already exist //
+ ////////////////////////////////////////////////////////
+function check_TemplateName(){
+	var templateNameValue = templateName_Template.value;
+	if(templateNameValue.length == 0){
+		document.getElementById("insert_newTemplate").setAttribute("class", "insert_newOff");
+		document.getElementById("insert_newTemplate").disabled = true;
+		document.getElementById("err_templateName").style.display = "none";
+	}
+	else{
+	var idThisTemplate = document.getElementById("idTemplate").value;
+	var set;
+	var datasetLength;
+	db.transaction(function(tx) {
+		var selectAllTemplatesName = "SELECT id, name FROM TemplateList WHERE name = ? AND id != ?";
+		tx.executeSql(selectAllTemplatesName, [templateNameValue, idThisTemplate], function(tx, result){
+			set = result.rows;
+			datasetLength = set.length;
+			if(templateNameValue.length > 0 && datasetLength == 0){ //the name does not exist in the database
+				document.getElementById("err_templateName").style.display = "none";
+				document.getElementById("insert_newTemplate").disabled = false;
+				document.getElementById("insert_newTemplate").setAttribute("class", "insert_new");
+				document.getElementById("update_Template").disabled = false;
+				document.getElementById("update_Template").setAttribute("class", "insert_new");
+			}
+			else{ // the name exists or the i8nputlength=0
+				if(datasetLength != 0){ // and the length is not zero
+					var templateNameLength = document.getElementById("templateName_Template").value.length;
+					if(templateNameLength == 0){
+						document.getElementById("err_templateName").style.display = "none";
+					}
+					else{
+					document.getElementById("err_templateName").style.display = "block";
+					}
+					document.getElementById("insert_new").setAttribute("class", "insert_newOff");
+					document.getElementById("insert_new").disabled = true;
+					document.getElementById("update_Template").setAttribute("class", "update_newOff");
+					document.getElementById("update_Template").disabled = true;
+					}
+				}
+			}, onError);
+	});
+}
+}
 
 </script>
 </head>
 <title>Research Project Manager</title>
-<body onLoad="sampleForm(); check_SampleName();" bgcolor="#8BA3b7">
-
+<body onLoad="sampleForm(); check_SampleName(); showListTemplates();" bgcolor="#8BA3B7">
 <div style="position:absolute; top: 5px; left:20px; z-index:400"><img src="images/test1.png" width="100px" height="79px"></div><div style="position:relative; padding-top:20px; padding-left: 30px; font-family: Tahoma,Verdana,Arial; color : #000000;
-font-size: 12px; color: #000000; text-decoration: none; margin-bottom: 3px;"><table width="890px" border="0px" cellspacing="0px" cellpadding="0px"><tr height="40px" valign="middle" align="left"><td style="padding-left:80px; width:50%"><font color="white" size="5px" style="font-family:Arial"><b>Research Project Manager</b></font><br><font color="black" size="2px" style="font-family:Arial; padding-left:4px;"><i>organize and keep track of your research data!</i></font></td><td valign="bottom" width="50%" align="right"><a href="intro.html" style="text-decoration: none; color:#000000;" onMouseOver="this.style.color='#D6D6D6'" onMouseOut="this.style.color='#000000'">intro</a> | <a href="db_setup.html" style="text-decoration: none; color:#000000;" onMouseOver="this.style.color='#D6D6D6'" onMouseOut="this.style.color='#000000'">settings</a></td></tr></table></div>
-<div style="width:930px; border-top:4px solid #FFFFFF;border-bottom:0px solid #FFFFFF; border-left:4px solid #FFFFFF; border-right:4px solid #FFFFFF; -moz-border-top-left-radius: 10px 10px; -moz-border-bottom-left-radius: 0px 0px; -moz-border-bottom-right-radius: 0px 0px; -moz-border-top-right-radius: 10px 10px; border-top-left-radius: 10px 10px; border-bottom-left-radius: 0px 0px; border-bottom-right-radius: 0px 0px; border-top-right-radius: 10px 10px; background-color:#4B6C88; padding-left:20px; padding-right:10px; height:50px">
-<table align="right" border="0px" valign="bottom" style="margin-top:12px; margin-bottom:0px; "><tr>
-<td width="90px" align="center" class="menutitle"><div style="width:80px;" class="menuTitleDivSelect"><a href="samples.html" alt="List Of Samples" title="List Of Samples">Samples</a></div></td><td width="90px" align="center" class="menutitle"><div style="width:80px;" class="menuTitleDiv"><a href="projects.html" alt="List Of Projects" title="List Of Projects">Projects</a></div></td><td width="90px" class="menutitle"><div style="width:80px;" class="menuTitleDiv"><a href="tools.html" alt="List Of Tools" title="List Of Tools">Tools</a></div></td><td width="110px" align="center" class="menutitle"><div style="width:100px;" class="menuTitleDiv"><a href="peopleLabs.html" alt="List Of People and Labs" title="List Of People and Labs">People & Labs</a></div></td><td width="90px" align="center" class="menutitle"><div style="width:80px" class="menuTitleDiv"><a href="providers.html" alt="List Of Providers" title="List Of Providers">Providers</a></div></td></tr></table></td></tr></table></div>
-
+font-size: 12px; color: #000000; text-decoration: none; margin-bottom: 0px;"><table width="938px" border="0px" cellspacing="0px" cellpadding="0px"><tr height="40px" valign="middle" align="left"><td style="padding-left:80px; width:50%"><font color="white" size="5px" style="font-family:Arial"><b>Research Project Manager</b></font><br><font color="black" size="2px" style="font-family:Arial; padding-left:4px;"><i>organize and keep track of your research data!</i></font></td><td valign="bottom" width="50%" align="right"><div style="width:140px; height:18px; text-align:center;background-color:;padding-right:2px; padding-top:3px;"><a href="db_setup.html" style="text-decoration: none; color:#000000; font-size:12px;" onMouseOver="this.style.color='#FFFFFF'" onMouseOut="this.style.color='#000000'">settings</a> | <div style="display:none;"><a href="#" style="text-decoration: none; color:#000000; font-size:12px;" onMouseOver="this.style.color='#FFFFFF'" onMouseOut="this.style.color='#000000'" onClick="showBackupDBDiv();">backup db</a></div></div></td></tr></table></div>
+<div style="width:960px; border-top:4px solid #FFFFFF;border-bottom:0px solid #FFFFFF; border-left:4px solid #FFFFFF; border-right:4px solid #FFFFFF; border-top-left-radius: 10px 10px; border-bottom-left-radius: 0px 0px; border-bottom-right-radius: 0px 0px; border-top-right-radius: 0px 0px; background-color:#4B6C88; padding-left:300; padding-right:0; height:40px"><button id="samplesList" alt="List Of Samples" title="List Of Samples" class="menuTitleDivSelect" onClick="parent.location='samples.html'" style="border-top-left-radius: 2px 2px; border-bottom-left-radius : 2px 2px; margin-left:400px; margin-top:10px; border-left: 0px solid #000000;">Samples</button><button id="ProjectsList" alt="List Of Projects" title="List Of Projects" class="menuTitleDiv"  onClick="parent.location='projects.html'" style="border-left: 0px solid #000000; cursor: pointer;">Projects</button><button id="ToolsList" alt="List Of Tools" title="List Of Tools" class="menuTitleDiv"  onClick="parent.location='tools.html'" style="border-left: 0px solid #000000; cursor: pointer;">Tools</button><button id="peopleLabsList" alt="People & Labs" title="People & Labs" class="menuTitleDiv"  onClick="parent.location='peopleLabs.html'" style="border-left: 0px solid #000000; cursor: pointer;">People & Labs</button><button id="ResourcesList" alt="List Of Resources" title="List Of Resources" class="menuTitleDiv"  onClick="parent.location='resources.html'" style="border-top-right-radius: 2px 2px; border-bottom-right-radius : 2px 2px; border-left: 0px solid #000000; cursor: pointer;">Resources</button></div>
 
 <div id="container" class="container">
 
 <div id="leftRail" class="leftRail">
-<div style="width:89px; height:12px; background-color:#4B6C88; border-bottom:1px solid #000000; margin-left:0px; margin-right:0px; padding-top:5px; padding-bottom:5px; padding-right:10px; padding-left:40px; -moz-border-top-left-radius: 4px 4px; -moz-border-bottom-left-radius: 4px 4px; -moz-border-bottom-right-radius: 4px 4px; -moz-border-top-right-radius: 4px 4px; border-top-left-radius: 4px 4px; border-bottom-left-radius: 0px 0px; border-bottom-right-radius: 0px 0px; border-top-right-radius: 4px 4px;"><font color="#FFFFFF">Modules</font></div>
+<div style="width:89px; height:12px; background-color:#4B6C88; border-bottom:1px solid #000000; margin-left:0px; margin-right:0px; padding-top:5px; padding-bottom:5px; padding-right:10px; padding-left:40px; -moz-border-top-left-radius: 4px 4px; -moz-border-bottom-left-radius: 4px 4px; -moz-border-bottom-right-radius: 4px 4px; -moz-border-top-right-radius: 4px 4px; border-top-left-radius: 4px 4px; border-bottom-left-radius: 0px 0px; border-bottom-right-radius: 0px 0px; border-top-right-radius: 4px 4px;"><table width="100%" cellspacing="0px" cellpadding="0px"><tr><td width="80%"><font color="#FFFFFF">Modules</td><td width="20%" align="right"><img src="images/popout.png" width="14px" onClick="popupMenu()" onMouseOver="this.style.cursor='pointer';" title="undock the menu" alt="undock the menu" id="btn_popupMenu"></td></tr></table></div>
 
 	<div id="listClass" class="listClass"><br>
 	<div style="width:540px; border:0px solid #000000; padding-left:0px; margin-left:0px; padding-top:2px;" id="listClass_content">
@@ -273,26 +410,24 @@ font-size: 12px; color: #000000; text-decoration: none; margin-bottom: 3px;"><ta
 			<div name="ModAnnealing" class="drag" id="module">Annealing</div>
 		</td>
 		</tr></table>
-
 	</div>
 </div>
-<div style="width:119px; height:12px; background-color:#4B6C88; border-bottom:1px solid #000000; margin-left:0px; margin-right:0px; padding-top:5px; padding-bottom:5px; padding-right:1px; padding-left:20px; -moz-border-top-left-radius: 4px 4px; -moz-border-bottom-left-radius: 4px 4px; -moz-border-bottom-right-radius: 4px 4px; -moz-border-top-right-radius: 4px 4px; border-top-left-radius: 4px 4px; border-bottom-left-radius: 0px 0px; border-bottom-right-radius: 0px 0px; border-top-right-radius: 4px 4px;"><font color="#FFFFFF">Compare samples</font></div>
-<div style="margin-top:10px;padding-left: 3px; ">Compare </div>
-
+<div style="width:123px; height:18px; background-color:#4B6C88; border-bottom:1px solid #000000; margin-left:0px; margin-right:0px; padding-top:1px; padding-bottom:5px; padding-right:1px; padding-left:15px; -moz-border-top-left-radius: 4px 4px; -moz-border-bottom-left-radius: 4px 4px; -moz-border-bottom-right-radius: 4px 4px; -moz-border-top-right-radius: 4px 4px; border-top-left-radius: 4px 4px; border-bottom-left-radius: 0px 0px; border-bottom-right-radius: 0px 0px; border-top-right-radius: 4px 4px;" id="tmp"><table width="100px" align="center" cellpadding="0px" cellspacing="0px" border="0px"><tr><td width="50%"><font color="#FFFFFF">Templates</font></td><td width="50%" align="right"><div style="align:right; width:15px; height:12px; margin-top: 2px; margin-bottom: 0px; padding-top: 2px; padding-left:0px; padding-bottom:1px; padding-right:0px; text-align:middle; overflow: hidden;" class="insert_new" onClick="templateForm();"><img src="btn_add.png" width="10px" height="10px"></div></td></tr></table></div><br>
+<div name="templateList" id="templateList" style="text-align:center; padding-left:15px;"></div>
 </div>
 
   <div id="centerRail" class="centerRail" align="center"> 
   </div>
 
   <div id="rightRail" class="rightRail">
-  <div style="width:239px; height:12px; background-color:#4B6C88; border-bottom:1px solid #000000; margin-left:0px; margin-right:0px; margin-bottom: 10px; padding-top:5px; padding-bottom:5px; padding-right:0px; padding-left:0px; -moz-border-top-left-radius: 4px 4px; -moz-border-bottom-left-radius: 4px 4px; -moz-border-bottom-right-radius: 3px 3px; -moz-border-top-right-radius: 3px 3px; border-top-left-radius: 3px 3px; border-bottom-left-radius: 0px 0px; border-bottom-right-radius: 0px 0px; border-top-right-radius: 4px 4px; text-align:center"><font color="#FFFFFF"><b>List Of Samples</b></font></div>
+  <div style="width:239px; height:12px; background-color:#4B6C88; border-bottom:1px solid #000000; margin-left:0px; margin-right:0px; margin-bottom: 10px; padding-top:5px; padding-bottom:5px; padding-right:0px; padding-left:0px; border-top-left-radius: 3px 3px; border-bottom-left-radius: 0px 0px; border-bottom-right-radius: 0px 0px; border-top-right-radius: 4px 4px; text-align:center"><font color="#FFFFFF"><b>List Of Samples</b></font></div>
 <table width="99%" cellspacing="0px" cellpadding="0px" align="center" border="0px"><tr><td align="left"><form name="samplesDisplay_form">
 <select name="btn_showSamplesByStatus" id="btn_showSamplesByStatus" style="width:130px; outline:none; background: #E7E8E8; color: #000000; border:1px solid #D4D4D4">
 			<option value="-1">Show________</option>
 			<option value="0" id="activeSamples">Active Samples</option>
 			<option value="1" id="archivedSamples">Archived Samples</option>
 			<option value="2" id="allSamples">All Samples</option>
-		</select></form></td><td align="right"><button onClick="sampleForm()" id="newSample"><img src="images/add_logo.png" alt="" width="10px" align="bottom"/>&nbsp;new sample</button></td></tr></table>
+		</select></form></td><td align="right"><button onClick="sampleForm();check_SampleName();" id="newSample"><img src="images/add_logo.png" alt="" width="10px" align="bottom"/>&nbsp;new sample</button></td></tr></table>
   	<br>
 		<div id="showTotalNumbSamples" style="width:220px; margin-left:0px; padding-left:0px; padding-right:2px; border:0px solid #FFFFFF; text-align:right; margin-bottom: 0px;"></div>
 	<div id="sampleList" class="sampleList" style="margin-top: 0px;	padding-bottom: 0px; margin-bottom: 0px; margin-left: 0px; padding-left:0px;  margin-right: 0px; width:220px;"></div>
@@ -339,7 +474,7 @@ function onError(tx, error) {
 ////  List of function to edit modules and show modules Arguments //
 ////////////////////////////////////////////////////////////////////
 //Record (Insert) the sampleLifeLine in the database
-function insertNewSample(){	
+function insertNewSample(){
 	// insert new sample in sampleList
 	var sampleName_SampleValue = document.getElementById('sampleName_Sample').value;
 	var archiveStatus_SampleValue = document.getElementById('archiveStatus_Sample').value;
@@ -376,7 +511,7 @@ function insertNewSample(){
 				var arrSLL = arrSampleLifeLine();
 				for(var i = 0; i < arrSLL.length; i++){
 					var tbleName = arrSLL[i];
-					window["arg"+tbleName](idSample, i, "insert");
+					window["arg"+tbleName](idSample, i, "insert", "sample");
 					//Make the delete button for the Module to appear
 					document.getElementById("btn_del"+i).style.visibility = "visible";
 				}
@@ -428,16 +563,16 @@ function updateSample(){
 				//STEP 1: Create the array of the Sample Life Line
 				var arrSLL = arrSampleLifeLine();
 				//Insert the newly added Mod in the DB
-			//console.log('Last level in DB: '+lastLevelInDB+' //  
+
 				for(var k = k_min ; k < arrSLL.length; k++){
 					var tbleName = arrSLL[k];
-					window["arg"+tbleName](idSample, k, "insert");
+					window["arg"+tbleName](idSample, k, "insert", "sample", null);
 					document.getElementById("btn_del"+k).style.visibility = "visible";
 				}
 	//Update the Mod that were already in the DB
 				for(var k = 0 ; k < k_min; k++){
 					var tbleName = arrSLL[k];
-					window["arg"+tbleName](idSample, k, "update");
+					window["arg"+tbleName](idSample, k, "update", "sample", null);
 					document.getElementById("btn_del"+k).style.visibility = "visible";
 				}
 			var SampleList = document.getElementById("sampleList");
@@ -521,7 +656,7 @@ var selectAllSamples = "SELECT SampleList.id, SampleList.idProject, SampleList.s
 				var idSample = item['id'];
 				var sampleName = item['sampleName'];
 				var shortSampleName = sampleName.substring(0,10);
-				var sampleText = '<div id="'+DivId+'" style="'+thisStyle+'" class="listSamplesDiv"><table width="220px" border="0px" cellspacing="0px" cellpadding="0px"><tr height="20px"><td><table width="220px" border="0px" cellspacing="0px" cellpadding="0px"><tr><td width="18px"><div style="width:10px; height:10px; border: 0px solid #000000; background:'+ colorCode + '; -moz-border-top-left-radius: 4px 4px; -moz-border-bottom-left-radius: 4px 4px; -moz-border-bottom-right-radius: 4px 4p	x; -moz-border-top-right-radius: 4px 4px; border-top-left-radius: 4px 4px; border-bottom-left-radius: 4px 4px; border-bottom-right-radius: 4px 4px; border-top-right-radius: 4px 4px;"></div></td><td width="142px"><div id="ttSpName'+idSample+'" class="ttSpName" alt="'+sampleName+'" title="'+sampleName+'" style="border:0px solid #000000">'+ shortSampleName + '(<span tag="'+dateCreation+'" title="'+dateCreation+'">'+ yearDateCreation +'</span>)</div></td><td width="15px"><a href="#" onclick="editSample('+idSample+');"><img src="images/btn_edit.png" width="14px" alt="edit" title="edit" style="margin-left:1px; margin-right:1px"></a></td><td width="15px"><a href="#" onclick="'+action+'('+idSample+')"><img src="images/'+btn_changeStatus+'" alt="'+alt_btnChangeStatus+'" title="'+alt_btnChangeStatus+'" width="14px" style="margin-left:1px; margin-right:1px"></a></td><td width="20px"><a href="#" onclick="deleteSample('+idSample+')"><img src="images/btn_delete.png" alt="delete" title="delete" width="15px" height="14px" style="margin-left:1px; margin-right:1px"></a></td></tr></table></td></tr></table></div>';
+				var sampleText = '<div id="'+DivId+'" style="'+thisStyle+'" class="listSamplesDiv"><table width="220px" border="0px" cellspacing="0px" cellpadding="0px"><tr height="20px"><td><table width="220px" border="0px" cellspacing="0px" cellpadding="0px"><tr><td width="18px"><div style="width:10px; height:10px; border: 0px solid #000000; background:'+ colorCode + '; -moz-border-top-left-radius: 4px 4px; -moz-border-bottom-left-radius: 4px 4px; -moz-border-bottom-right-radius: 4px 4p	x; -moz-border-top-right-radius: 4px 4px; border-top-left-radius: 4px 4px; border-bottom-left-radius: 4px 4px; border-bottom-right-radius: 4px 4px; border-top-right-radius: 4px 4px;"></div></td><td width="142px"><div id="ttSpName'+idSample+'" class="ttSpName" alt="'+sampleName+'" title="'+sampleName+'" style="border:0px solid #000000">'+ shortSampleName + '(<span tag="'+dateCreation+'" title="'+dateCreation+'">'+ yearDateCreation +'</span>)</div></td><td width="15px"><div onclick="editSample('+idSample+');" class="btn_editSample"><img src="images/btn_edit.png" alt="edit" title="edit" width="12px" height="12px" style="margin-left:1px; margin-right:1px"></div></td><td width="15px"><div onclick="'+action+'('+idSample+')" class="btn_statusSample"><img src="images/'+btn_changeStatus+'" alt="'+alt_btnChangeStatus+'" title="'+alt_btnChangeStatus+'" width="11px"></div></td><td width="15px"><div onclick="deleteSample('+idSample+')" class="btn_deleteSample"><img src="images/btn_delete.png" alt="delete" title="delete" width="8px" height="8px" style="margin-left:1px; margin-right:1px"></div></td></tr></table></td></tr></table></div>';
 				sampleList.innerHTML += sampleText;
 			}
 			if(n == 2){ //Counts the number of "all samples"
@@ -579,6 +714,7 @@ function editSample(idSample){
 	db.transaction(function(tx){
 		var selectThisSampleArg = "SELECT * FROM SampleList WHERE id = ?";
 		tx.executeSql(selectThisSampleArg, [idSample], function(tx, result) {
+			showInsertSubmitButton();
 			datasetArgSample = result.rows;
 			var argSample;
 			// Fill up the input of SampleArg
@@ -612,6 +748,7 @@ function editSample(idSample){
 				document.getElementById("lastLevelInDB").value = datasetMod.length-1;
 				var val = document.getElementById("lastLevelInDB").value;
 				console.log('The last level in DB is: '+val);
+				alert(val);
 				if(datasetMod.length > 0){ // execute only if at least a single Mod is found
 					//Build the SampleLifeLine
 					for (var i = 0, thisLifeLine = null; i < datasetMod.length; i++) {
@@ -636,10 +773,10 @@ function editSample(idSample){
 						newCell.align = "center";
 						newRow.height="15px";
 					//Write the form in the ArdMod Box
-						var thisModForm = window["arg"+thisModTble](idSample, i, "showEmptyForm");
+						var thisModForm = window["arg"+thisModTble](idSample, i, "showEmptyForm", "sample", null);
 						document.getElementById("argBox_lev"+thisModLevel).innerHTML = thisModForm;
 						
-						window["arg"+thisModTble](idSample, i, "edit");
+						window["arg"+thisModTble](idSample, i, "edit", "sample", i);
 					// Get data in the database for thisModLevel and write it in the the form 'thisModForm'
 					}
 					// add an empty droppable box
@@ -656,7 +793,7 @@ function editSample(idSample){
 				}, onError);
 		}, onError);
 	});
-}
+ }
 //////////////////////////////////////////////////////////////////////////////////////////
 ////     Archive sample: sample might be inactive and off interest)                 //////
 ////////////////////////////////////////////////////////////////////////////////////////// 
@@ -748,14 +885,10 @@ function deleteLevel(modNameDel, levelDel){
 				if(kLevel < levelDel){ // if the module level is below the deleted level, keep the level unchanged
 				}
 				else if (kLevel > levelDel){ // if the module level is larger than the deleted level, then its new level is level-1
-					alert("level: " +kLevel+" > delLevel ------ start");
-					window["arg"+thisModule](idSample, kLevel, "downLevel"); // bring the level down by 1 unit: newLevel = oldLevel - 1
-					alert("level: " +kLevel+" > delLevel ------ end");
+					window["arg"+thisModule](idSample, kLevel, "downLevel", "sample", null); // bring the level down by 1 unit: newLevel = oldLevel - 1
 			}
 				else if(kLevel == levelDel){ // for the level deleted
-					alert("level: " +kLevel+" = delLevel ------ start");
-					window["arg"+thisModule](idSample, kLevel, "update"); //update delStatus to 1 (deleted) in the module table and automatically make changes in sampleLifeLine with trigger. window["arg"+tbleName](idSample, k, "update");
-					alert("level: " +kLevel+" = delLevel ------ end");
+					window["arg"+thisModule](idSample, kLevel, "update", "sample", null); //update delStatus to 1 (deleted) in the module table and automatically make changes in sampleLifeLine with trigger. window["arg"+tbleName](idSample, k, "update");
 			}
 		}
 		editSample(idSample);
@@ -765,14 +898,293 @@ function deleteLevel(modNameDel, levelDel){
 
 }
 
+//COMPARE SAMPLES
+function compareSamples(){
+	//Get the idSample:
+	var thisIDSample = document.getElementById("idSample").value;
+	if(thisIDSample.length != 0){
+	centerRail.innerHTML = '<img src="images/watermark.png">';
+	}
+	else{
+		alert("you must select a sample first");
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////
+//////   Templates                       ////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+function templateForm(){
+	var text = '<table width="540px" cellspacing="1px" cellpadding="1px" style="border-bottom:1px solid #D4D4D4;" border="0px"><tr><td align="left" width="435px"><div id="submitInsertButton" style="width:100px;"><button onClick=" insertNewTemplate(); showInsertSubmitButton();" id="insert_newTemplate" class="insert_newOff"><img src="images/save_logo.png" width="15px" height="15px" align="baseline">&nbsp;<b>save</b></button></div><div id="submitUpdateButton" style="width:100px; display:none"><button onClick="updateTemplate();" id="update_Template" class="update_Template"><img src="images/update_logo.png" width="15px" align="baseline">&nbsp;<b>update</b></button></div></td><td width="35px"><div id="comparebutton" style="width:35px; display:none;" onClick="compareTemplates()"><button id="compare" style="width:30px; height:28px;"><img src="images/btn_compare.png" width="20px" title="compare with..."></button></div></td><td width="35px"><div id="printbutton" style="width:35px; display:none;"><button id="printer" onClick="printDiv(\'centerRail\');" style="width:30px; height:28px;"><img src="images/btn_printer.png" width="20px" title="print the Template"></button></div></td><td align="right" width="35px"><div id="submitExpandViewButton" style="width:35px;"><button onClick="expandAllBox();showCompactViewSubmitButton()" id="expand_A" style="width:30px; height:28px;"><img src="images/btn_expandAll.png" width="20px" title="expand all modules of this sample"></button></div><div id="submitCompactViewButton" style="width:35px; display:none;"><button onClick="compactAllBox();showExpandViewSubmitButton()" id="compact_A" style="width:30px; height:28px;"><img src="images/btn_collapseAll.png" width="20px"></button></div></td></tr></table><br>';
+	text += '<div id="argTemplate" style="overflow:hidden; height:50px; margin-bottom:10px; border:0px solid #F7DFC5; width: 550px; margin-left:30px; margin-right:30px; position: relative;"><input type="hidden" id="archiveStatus_Template" value="0"/><input type="hidden" id="delStatus_Template" value="0"/><input type="hidden" id="idTemplate" value=""/><input type="hidden" id="lastLevelInDB" value="-1"/><div style="width:60px; height:10px; position: relative; left:265px;" class="editArgTemplate" name="editArgTemplate" onClick="argTemplate()" id="editArgTemplate"><img src="images/collapse_arrow.png" width="20px" height="20px" title="show all the arguments of the Template"></div><div id="err_templateName" class="err_templateName" style="display: none; position:absolute; top: 20px; right:20px; background-color:#FFF8AD; border: 0px solid #FFF15B; height: 20px; padding-top:8px; padding-bottom:1px; width:200px; text-align:center;"><div style="font-size: 0px; line-height: 0%; width: 0px; border-bottom: 10px solid #FFF8AD; border-left: 15px solid transparent; border-right: 15px solid transparent; position: absolute; top:11px; left:-14px;"></div><div>this Template name is already in use</div></div><table border="0px solid #000000" style="width:520px;  cellspacing:0px; cellpadding: 0px; margin: 2px 10px 0px 0px; align: left;"><tr height="35px"><td style="width: 120px; align: left; valign: middle">Name of Template</td><td style="width: 330px"><input type="text" id="templateName_Template" style="width:98%; background-color:#FFFFFF; margin:0px 0px 0px 0px; -webkit-border-radius: 2px; border: 1px solid #D4D4D4; padding: 2px 2px 2px 2px; outline: none;" onkeyup="check_TemplateName();"/></td><td style="width: 10px;"></td><td style="width:60px; align: left; valign: middle;"><div id="showIDTemplate"  style="margin: 0 0 0 0;"></div></td></tr><tr height="35px"><td style="width:120px; align: left; valign: middle;">Creation date</td><td style="width: 400px;" colspan="3" valign="middle" align="left"><input type="text" id="dateCreation_Template" style="width:80px; background-color:#EAE9E9; margin:0px 0px 0px 0px; -webkit-border-radius: 2px; border: 1px solid #D4D4D4; padding: 2px 2px 2px 2px;" readonly="readonly; margin-right: 2px;"/> &nbsp; &nbsp;<a href="javascript:NewCal(\'dateCreation_Template\',\'ddmmyyyy\',false,24)" alt="popup must be turned ON" title="popup must be turned ON" style="margin:0px; padding:0px;"><img src="images/btn_calendar.gif" style="width: 20px; border: 0 px solid #000000; margin: 0 4 0 0;" onMouseOver="this.style.width=\'21px\'" onMouseOut="this.style.width=\'20px\'"></a></td></tr><tr height="20px"><td style="width:520px; padding: 0 0 1px 0;" colspan="4">Info:</td></tr><tr height="20px"><td style="align:right; padding: 0 5px 0 5px; align:center;" colspan="4"> <textarea id="details_Template" style="width:520px; height:90px; background-color:#EAE9E9; margin:0px 0px 0px 0px; -webkit-border-radius: 2px; border: 1px solid #D4D4D4; padding: 2px 2px 2px 2px; outline: none;" onMouseOver="this.style.backgroundColor=\'#E7E6E6\'" onMouseOut="this.style.backgroundColor=\'#EAE9E9\'"></textarea></td></tr></table></div>';
+	text += '<table width="550px"  style="border-top: 2px dotted #D4D4D4; padding-top: 4px;" class="listLevels" cellpadding="0px" cellspacing="0px" align="center" valign="center" id="listLevels"><tr height="15px"><td width="380px" align="center"><div class="hostModObj" id="level_0" name="" style="position:relative;z-index:0"></div><div style="width:100%; height:0px; border:0px solid #000000; overflow:hidden; margin-bottom:10px; margin-top:2px;" id="argBox_lev0" class="argBox"></div></td></tr></table>';
+	document.getElementById("centerRail").innerHTML = text; // append the text form to the div centerRail
+	makeItDroppable(0);	 //make level 0 to be droppable
+}
+////////////////////////////////////////////////////////////////////
+////  List of function to edit modules and show modules Arguments //
+////////////////////////////////////////////////////////////////////
+//Record (Insert) the templateLifeLine in the database
+function insertNewTemplate(){
+	// insert new template in templateList
+	var templateName_TemplateValue = document.getElementById('templateName_Template').value;
+	var archiveStatus_TemplateValue = document.getElementById('archiveStatus_Template').value;
+	var delStatus_TemplateValue = document.getElementById('delStatus_Template').value;
+	var dateCreation_TemplateValue = document.getElementById('dateCreation_Template').value;
+	var details_TemplateValue = document.getElementById('details_Template').value;
+	var insertTemplateList = "INSERT INTO TemplateList (name, dateCreation, details, archiveStatus, delStatus) VALUES (?, ?, ?, ?, ?)";
+  //Select the id of the template just added to templateList
+	db.transaction(function(tx) {
+//INSERT INTO name_of_table (name_of_column1, name_of_column2) VALUES (value of parameter1, value_of_parameter2) 
+		tx.executeSql(insertTemplateList, [templateName_TemplateValue, dateCreation_TemplateValue, details_TemplateValue, archiveStatus_TemplateValue, delStatus_TemplateValue], function(tx,res){	
+		//Get the id of the inserted sample
+			var selectIdTemplate = "SELECT id from TemplateList order by id DESC limit 1";
+			tx.executeSql(selectIdTemplate, [], function(tx,resIdTemplate){
+				var datasetIdTemplate = resIdTemplate.rows;
+				var itemIdTemplate = datasetIdTemplate.item(0);
+				var idTemplate = itemIdTemplate['id'];
+				//Show the IdTemplate value next to the Template name
+				document.getElementById("showIDTemplate").innerHTML='#'+idTemplate;
+				//set the value of the input id=idSample to idSample number for update later on
+				document.getElementById("idTemplate").value = idTemplate;
+				//Check that idTemplate has been created in the database
+
+				//HERE
+				
+				///
+				//Create an array containing the ModTbleName for each level starting at 0
+				var arrTLL = arrTemplateLifeLine();
+				for(var i = 0; i < arrTLL.length; i++){
+					var tbleName = arrTLL[i];
+					window["arg"+tbleName](idTemplate, i, "insert", "template", null);
+					//Make the delete button for the Module to appear
+					document.getElementById("btn_del"+i).style.visibility = "visible";
+				}
+				//update the lastLevelInDB hidden input
+				document.getElementById("lastLevelInDB").value = parseInt(arrTLL.length) -1;
+				var val = document.getElementById("lastLevelInDB").value;
+				console.log('The last level of the template in DB is:'+val);
+		}, onError);
+	}, onError);
+});
+showListTemplates();
+}
+/////////////////////////////////////////
+// LIST OF TEMPLATES RIGHT MENU
+/////////////////////////////////////////
+function showListTemplates() {
+    db.transaction(function(tx) {
+	var templateList = document.getElementById("templateList");
+		templateList.innerHTML = '';
+		var selectAllTemplates = "SELECT TemplateList.id, TemplateList.name, TemplateList.dateCreation, TemplateList.details, TemplateList.archiveStatus, TemplateList.delStatus FROM TemplateList WHERE TemplateList.delStatus = 0";
+		var dataset;
+		tx.executeSql(selectAllTemplates, [], function(tx, result) {
+			dataset = result.rows;
+			var count = dataset.length;
+			for (var i = 0, item = null; i < count; i++) {
+				item = dataset.item(i);
+				var templateArchiveStatus = item['archiveStatus'];
+				var templateDateCreation = item['dateCreation'];
+				var idTemplate = item['id'];
+				var templateName = item['name'];
+				var templateDetails = item['details'];
+				if(templateDetails.length == 0){
+					templateDetails = 'Description of the template is not available. Edit this template to add some descriptions!';
+				}
+				templateList.innerHTML += '<div style="position:relative" onMouseOver="infoBaloon('+idTemplate+',\'block\')" onMouseOut="infoBaloon('+idTemplate+',\'none\')"><div class="drag" id="tempBox_'+idTemplate+'" name="tempBox_'+idTemplate+'">'+templateName+'</div><div id="infoBaloonDiv_'+idTemplate+'" style="position:absolute; top:5px; z-index:300; left:100px; display:none; border-radius: 4px 4px; background-color:#B6B6B6; opacity: 0.9; padding:2px 2px 2px 2px; -webkit-box-shadow : 3px 3px 3px #E5E5E5; height:120px; border:1px solid #A1A1A1;"><table width="200px" cellpadding="0px" cellspacing="0px" border="0px"><tr><td align="left" width="100px"><div onClick="editTemplate('+idTemplate+');" class="db_buttonsSelect" style="width:40px; height:12px; padding:0px 0px 0px 0px; border-radius: 2px 2px;">edit</div></td><td align="right" width="100px"><div onClick="deleteTemplate('+idTemplate+');" class="db_buttonsDrop" style="width:40px; height:12px; padding:0px 0px 0px 0px;border-radius: 2px 2px;">delete</div></td></tr><tr><td width="left" colspan="2" style="font-weight:normal; font-size:11px; color: #000000; "><div style="margin: 4px 4px 4px 4px; background-color: #FFFFFF; opacity:0.6;"><b>'+templateDateCreation+'</b><br>'+templateDetails+'</div></td></tr></table></div>';
+			}
+			makeItDraggable();
+		}, onError);
+	});
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
+//This function retrieves the list of modules used in ascendant level order.	 ////
+ ////////////////////////////////////////////////////////////////////////////////////
+function arrTemplateLifeLine(){
+	var j = 0;
+	var countSteps = 0;
+	var arrTemplateLifeLine = new Array();
+	while(j == 0){
+		idInputLevels = "level_"+countSteps;
+		var containerStepID = document.getElementById(idInputLevels);
+		var thisStepMod = containerStepID.getAttribute("name");
+		if(thisStepMod.length == 0){
+		j = 1;}
+		else{
+			arrTemplateLifeLine.push(thisStepMod); //singleStep(level#,ModName)
+			countSteps = countSteps + 1;
+		}
+	}
+	//Need to check that there is no empty element in the array and that all 
+	return arrTemplateLifeLine;
+}
+//Show/Hide InfoBaloon Of Template
+function infoBaloon(idTemplate,displayStyle){
+	var infoElmt = document.getElementById('infoBaloonDiv_'+idTemplate);
+	infoElmt.style.display = displayStyle;
+	if(displayStyle == "none"){
+	}
+}
+//Delete Template
+function deleteTemplate(idTemplate){
+	var answer = confirm("Do you really want to delete this template?");
+	if (answer){
+		var delStatus = 1; //delete the Template (delStatus)
+		db.transaction(function(tx) {	
+		var updateDeleteTemplate = "UPDATE TemplateList SET delStatus = ? WHERE id = ?";
+		tx.executeSql(updateDeleteTemplate, [delStatus, idTemplate], function(tx){
+			showListTemplates();
+			templateForm();   //empty the div "content	  
+		}, onError);
+		}); 
+	}	
+}
+//Update Template
+function updateTemplate(idTemplate){
+
+}
+/////////////////////////////////////////
+// Show bubble of Template ////////////////
+/////////////////////////////////////////
+function argTemplate(){
+	var divArgTemplate = document.getElementById("argTemplate");
+	var divArgTemplateHeight = divArgTemplate.style.height.replace("px","");
+	if(divArgTemplateHeight > 51){
+		divArgTemplate.style.height = "50px";
+		divArgTemplate.style.border="1px solid #F7DFC5";
+		document.getElementById("editArgTemplate").innerHTML = '<img src="images/collapse_arrow.png" width="20px" height="20px"  title="show all the arguments of the template">';
+	}
+	else{
+	divArgTemplate.style.height = "270px";
+	divArgTemplate.style.border="1px solid #F7DFC5";
+	document.getElementById("editArgTemplate").innerHTML = '<img src="images/expand_arrow.png" width="20px" height="20px">';
+	}
+}
+//Edit Template
+function editTemplate(idTemplate){
+	templateForm(); // load thetemplateLife Line form (empty) in centerRail.
+	var centerRail = document.getElementById("centerRail");
+	//Fill up the Arg inputs with that of this Sample
+	var datasetArgTemplate;
+	db.transaction(function(tx){
+		var selectThisTemplateArg = "SELECT * FROM TemplateList WHERE id = ?";
+		tx.executeSql(selectThisTemplateArg, [idTemplate], function(tx, result) {
+			showInsertSubmitButton();
+			datasetArgTemplate = result.rows;
+			var argTemplate;
+			// Fill up the input of TemplateArg
+			argTemplate = datasetArgTemplate.item(0);
+			document.getElementById("idTemplate").value = argTemplate['id'];
+			document.getElementById("archiveStatus_Template").value = argTemplate['archiveStatus'];
+			document.getElementById("delStatus_Template").value = argTemplate['delStatus'];
+			document.getElementById("templateName_Template").value = argTemplate['name'];
+			document.getElementById("dateCreation_Template").value = argTemplate['dateCreation'];
+			var showIDTemplate = document.getElementById("showIDTemplate");
+			showIDTemplate.innerHTML = "#"+idTemplate;
+			check_TemplateName();
+			document.getElementById("details_Template").value = argTemplate['details'];
+			
+			var selectThisTemplateLifeLine = "SELECT * FROM TemplateLifeLine WHERE idTemplate = ? AND delStatus = ? ORDER BY ModLevel ASC";
+			var datasetMod;
+			tx.executeSql(selectThisTemplateLifeLine, [idTemplate, 0], function(tx, resMod) {
+				datasetMod = resMod.rows;
+				var thisLifeLine;
+				//Backup the last level of the TemplateLifeLine
+				document.getElementById("lastLevelInDB").value = datasetMod.length-1;
+				var val = document.getElementById("lastLevelInDB").value;
+				console.log('The last level in DB is: '+val);
+				if(datasetMod.length > 0){ // execute only if at least a single Mod is found
+					//Build the TemplateLifeLine
+					for (var i = 0, thisLifeLine = null; i < datasetMod.length; i++) {
+						thisLifeLine = datasetMod.item(i);
+						var thisModTble = thisLifeLine['ModTble'];
+						thisModTble = thisModTble.replace("ModTemp","Mod");
+						var thisIdMod = thisLifeLine['idMod'];
+						var thisModLevel = thisLifeLine['ModLevel'];
+						var listLevelsTable = document.getElementById("listLevels");
+						if(i == 0){//First remove the first row in the table id="listLevels"
+							listLevelsTable.deleteRow(0);
+						}
+					//Create a new row and a new cell
+						var listLevelsTable = document.getElementById("listLevels");
+						var newRow = listLevelsTable.insertRow(i);
+						var newCell = newRow.insertCell(0);
+					//Get the long name of the Mod (ModLongName) to display on the drag and drop box
+						var pos = ListModShortNameArr.indexOf(thisModTble);
+						var ModLongName = ListModLongNameArr[pos];
+						var textNewCell = '<div class="hostModObj" id="level_'+thisModLevel+'" name="'+thisModTble+'" style="position:relative;z-index:0"><div class="drag" id="module" name="'+thisModTble+'">'+ModLongName+'</div><div style="position:relative; border:0px solid #000000; bottom:20px; left:130px; width:200px; padding-top:2px; border-bottom: 1px solid #000000;" align="right"><table border="0px" cellspacing="0px" cellpadding="0px" width="145px"> <tr><td width="100px"><b>Level '+thisModLevel+'</b></td><td width="20px"><div class="delLevel" name="del_'+thisModLevel+'" id="btn_del'+thisModLevel+'" onClick="deleteLevel(\''+thisModTble+'\', '+thisModLevel+');"><img src="images/btn_deleteLevel.png" width="20px" height="20px" class="deleteLevel" title="delete this level"></div></td><td align="right" width = 22px"><div width="20px" height="20px" class="editLevel" name="edit_'+thisModLevel+'" id="btn_edit'+thisModLevel+'"><img src="images/collapse_arrow.png" width="20px" height="20px"></div></td></tr></table></div></div><div style="width:100%; height:0px; border:0px solid #000000; overflow:hidden; margin-bottom:10px; margin-top:2px;" id="argBox_lev'+thisModLevel+'" class="argBox"></div>';
+						newCell.innerHTML = textNewCell;
+						newCell.width = "380px";
+						newCell.align = "center";
+						newRow.height="15px";
+					//Write the form in the ArgMod Box
+						var thisModForm = window["arg"+thisModTble](idTemplate, i, "showEmptyForm", "template", null);
+						document.getElementById("argBox_lev"+thisModLevel).innerHTML = thisModForm;
+						
+						window["arg"+thisModTble](idTemplate, i, "edit", "template", i);
+					// Get data in the database for thisModLevel and write it in the the form 'thisModForm'
+					}
+					// add an empty droppable box
+					var newRow = listLevelsTable.insertRow(-1);
+					var newCell = newRow.insertCell(0);
+					var thisModLevel = datasetMod.length;
+					var textNewCell = '<div class="hostModObj" id="level_'+thisModLevel+'" name="" style="position:relative;z-index:0"></div><div style="width:100%; height:0px; border:0px solid #000000; overflow:hidden; margin-bottom:10px; margin-top:2px;" id="argBox_lev'+thisModLevel+'" class="argBox"></div>';
+					newCell.innerHTML = textNewCell;
+					newCell.width = "380px";
+					newCell.align = "center";
+					newRow.height="15px"
+					makeItDroppable(thisModLevel);
+					}
+				}, onError);
+		}, onError);
+	});
+ }
+ 
+/////////////////////////////////////////////
+//// COmpare Templates   ////////////////////
+/////////////////////////////////////////////
+function compareTemplates(){
+	
+}
+
 //////////////////////////////////////////////////////////////////////
 ///         Print         (ISSUES: does not fill form             ////
 //////////////////////////////////////////////////////////////////////
 function printDiv(divName) {
+//centerRail.innerHTML +='<div id="watermark" style="display:none; z-index: 500; position:float; top: 50%;"><img src="images/watermark.png" width="500px"></div>';
+	document.getElementById("watermark").style.display = "block";
      var printContents = document.getElementById(divName).innerHTML;
      var originalContents = document.body.innerHTML;
      document.body.innerHTML = printContents;
      window.print();
      document.body.innerHTML = originalContents;
+}
+
+//////////////////////////////////////////////////////////////////////
+///         PopUp The Left Menu                                   ////
+//////////////////////////////////////////////////////////////////////
+function popupMenu(){
+	document.getElementById("leftRail").style.position = "fixed";
+	document.getElementById("centerRail").style.marginLeft = "147px";
+	document.getElementById("btn_popupMenu").setAttribute("onClick", "closePopupMenu()");
+	document.getElementById("btn_popupMenu").setAttribute("src", "images/popin.png");
+	document.getElementById("btn_popupMenu").setAttribute("title", "dock the menu to the window");
+	document.getElementById("btn_popupMenu").setAttribute("alt", "undock the menu to the window");
+}
+
+function closePopupMenu(){
+	document.getElementById("leftRail").style.position = "";
+	document.getElementById("centerRail").style.marginLeft = "6px";
+	document.getElementById("btn_popupMenu").setAttribute("src", "images/popout.png");
+	document.getElementById("btn_popupMenu").setAttribute("title", "undock the menu");
+	document.getElementById("btn_popupMenu").setAttribute("alt", "undock the menu");
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//                BACKUP THE DATABASE                                 ///////
+/////////////////////////////////////////////////////////////////////////////
+function showBackupDBDiv(){
+	var textDiv = '<div id="fade" style="position:fixed; top:0px; left:0px; width:100%; height:100%; width:100%; opacity: 0.8; background-color:#000000;z-index:800;"></div><div id="backupDBForm" style="position: fixed; top: 20%; left: 30%; height: 350px; width:500px; background-color:#8BA3B7; z-index: 801; border-top-left-radius: 5px 5px; border-bottom-left-radius: 5px 5px; border-bottom-right-radius: 5px 5px; border-top-right-radius: 5px 5px; padding: 10px 10px 10px 10px; -webkit-box-shadow : 0px 0px 0px #B0B0B0; "><table align="right"><tr><td><a href="" id="btn_closeBackUpDiv">close window</a></td></tr></table></table><table style="" cellspacing="0px; cellpadding="0px" width="450px" border="1px" align="center"><tr><td><div contenteditable>My epic novel that I want to lose.</div></td></tr><tr><td><input type="text" value="MyFile.txt" placeholder="filename.txt"><button onclick="downloadFile()">Create file</button> <output></output></td></tr></table></div></div>';
+	document.body.innerHTML += textDiv;
 }
 </script>
