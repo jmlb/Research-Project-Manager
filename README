@@ -1,21 +1,32 @@
-Intro
-Project Manager is a local file browser-based app that enables to keep track of samples. measurements, and tool activities. It can be used as an electronic research lab book and as a complement to the labbook. For example, with the built-in search engine, it makes easier to find information in lab book. The Advanced Version of Research Project Manager uses 'modules' and 'classes' for the creation of the samples. By taking an approach similar to Object Oriented enables a more robust code (easier to update and modify) versatile , and ultimately a better experience for the user. The modules are objects that are related to a specific action like spin coating of a wafer, deposition of a thin film. Classes are a family of similar modules, like Deposition, patterning. 
+INTRO (WHAT IS RESEARCH PROJECT MANAGER):
+Research Project Manager (RPM) is a Offline browser-based app that enables to keep track of research Projects, and in particular sample fabrication, characterization. This tool can also be used as an electronic research lab book and as a complement to a hard labbook. With the handy drag-and-drop capability, a multi-level nanofabrication recipe process can be generated, and saved in a database. This app works exclusively with google Chrome because it integrates SQlite, the database engine.
 
-At the moment, there are 3 classes of modules: deposition, nanofab and characterization. The deposition includes the following modules: single layer (SL) and multilayer (ML). Those two modules enable to constructu a variety of films via the combination of those modules. The modules are characterized by their arguments, i.e inputs for reporting on key parameter of an action like for Deposition: the base pressure, the layers thickness for example. Deposition tool, and deposition technique (sputtering tool, ebeam with corresponding arguments (deposition rate, time or rate monitor thickness), can also be specified.
+HANDS ON:
+Research Project Manager uses 'modules' and 'classes' for the creation of the samples. A module is an object that relates to an action such as spin coating, deposition of a single layer or a multilayer. Classes are a family of similar modules like Deposition, NanoFabrication. At the moment, there are 4 classes of modules: deposition, nanofabrication, measurements and Processing. The Deposition class for example includes the following modules: single layer (SL) and multilayer (ML). Those two modules enable to construct a variety of films using a combination of those modules. The modules are characterized by their arguments: base pressure, the layers thickness for example, materials, etc...
 
-The second series of class is nanofabrication. The different modules in that class enable to report on a nanofab recipe for example. The modules include: ion milling, spin coating, stepper, etc... 
-Another class is the characterization. The modules associated with that class includes AFM, Alpha Step, Transport measurements, magnetometry. More details about the module is available (link here). The sample fabrication and characterization is based on a sequential approach. Indeed, each sample is determined by their so-called lifeline (samplelifeline). Lifeline includes a set of modules for the film fabrication, a set of modules for the patterning if any, and for the characterization. Each modules on the lifeline follows a chronological order, and are associated wit ha level number increasing by incrementation. Adding modules on the life line provides additional information about the sample. So, if your last 'action' is magnetometry measurements using a VSM, drag and drop the magnetometry module in the empty box at the end of samplelifeline. By clicking on the edit button of the module, the module balloon is displayed. It shows all the arguments of the module, and empty inputs to enter the values specific to the sample. For example, you choose the tool used for the magnetometry measurements: 'vsm'. You can also reports on the data: Ms, Hc, Hsat, What is it?
-Research Project Manager is a browser-based app to keep track of and manage research projects. The user can save all experimental results: including files, images, and details of fabrication process.
-How does it work?
-This web-app is more precisely a browser based app, that does not require live internet connection. It uses html, javascript and sqlite. Sqlite is a database built-in in chrome (ref.). For example, all bookmarks of chrome are saved in a sqlite database.
-Compatibility
-The app was specifically written for google chrome. It has also been tested on android pad like the asus Transformer and Lenovo.
+The second series of class is nanofabrication. The different modules in that class enable to report on a nanofab recipe for example. The modules include: ion milling, spin coating, stepper, etc... Another class is the measurements: AFM, Alpha Step, Transport measurements, magnetometry.
+
+The 'fabrication' of the sample is based on a sequential approach. Indeed, each sample is determined by their so-called lifeline (samplelifeline). Lifeline includes a set of modules for the film fabrication, a set of modules for the patterning if any, and for the characterization. Each modules on the lifeline follows a chronological order, and are associated with an increasing level number. Adding modules on the life line provides additional information about the sample. So, if your last 'action' is magnetometry measurements using a VSM, drag and drop the magnetometry module in the empty box at the end of samplelifeline. By clicking on the edit button of the module, the module balloon is displayed. It shows all the arguments of the module, and empty inputs to enter the values specific to the sample. For example, you choose the tool used for the magnetometry measurements: 'vsm'. You can also reports on the data: Ms, Hc, Hsat, What is it?
+
+HOW TO START?
+Copy the files or unzip the zip file in the folder of your choice. Open the file db_setup.html with Google Chrome. Create all the Tables (this is where the information will be stored): click on [select All] and then [create]. Do the same for the Triggers. I might tale some time before all those components are created. make sure that all tables and triggers have been created.
+Now, you will need to create your first project: Go to [projects]
+Now, yo ucan start by creating your first sample, click on [samples].
+Click on New sample, give it a name.
+Now, rag and drop modules from the left menu into the central window.
+
+HOW DOES IT WORK?
+This web-app is more precisely a browser based app, that does not require live internet connection. It uses html, javascript and sqlite. Sqlite is a database engine built-in in chrome. The app was specifically written for google chrome. It has also been tested on android pad like the asus Transformer and Lenovo.
 This tool is a manager web-app. It is local, meaning no connection to any server is required. 
 
-FREE 
-Typical Users: this is destined to experimentalists.. 
-Important note: the package includes a backup option. Make sure to backup your database before deleting your web history. indeed, the database created is saved as a sqlite in a user folder like: user_name/local settings/.... by sqlite is saved in a file under: 
 
-Note that you can use as a complement to your labbook. For instance in the helpme window, you can write down the page in your labbook where you.
+NEXT MILESTONES:
+1) Option to backup the database either locally or on the cloud.
+One of the issue with using the Google Chrome SQlite engine, is that all created db, including Research Project Manager are deleted when clearing Google cache and/or deleting the web History.
+2) Print the Sample Life Line with arguments
+3) Compare samples
 
-Start: to create a new Sample, it is required to first give a name to the sample. The name can be modified at any moment and will not affect the other sequences. 
+
+LICENSE
+Code written by Jean-Marc Beaujour (jmlbeaujour@gmail.com)
+The app is free and will be found to be useful for experimentalists...
